@@ -1,0 +1,31 @@
+{ pkgs, ... }:
+{
+  home.packages = with pkgs; [
+    bat
+    btop
+    choose-gui
+    curl
+    delta
+    docker
+    docker-compose
+    eza
+    fd
+    fzf
+    gh
+    git
+    jq
+    nixd
+    nixfmt-rfc-style
+    nodejs
+    ripgrep-all
+    ruff
+    shellcheck
+    shfmt
+    tealdeer
+    tree
+    unzip
+    vim
+    zip
+    zoxide
+  ];
+}

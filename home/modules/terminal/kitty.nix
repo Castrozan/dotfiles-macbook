@@ -1,0 +1,43 @@
+{
+  pkgs,
+  inputs,
+  isNixOS,
+  ...
+}:
+let
+  nixglWrap = import ../../../lib/nixgl-wrap.nix { inherit pkgs inputs isNixOS; };
+
+  kittyPackage = nixglWrap.wrapWithNixGLIntel {
+    package = pkgs.kitty;
+    binaries = [ "kitty" ];
+  };
+in
+{
+  home.file.".config/kitty/startup.conf".source = ../../../.config/kitty/startup.conf;
+  home.file.".config/kitty/wallpaper.png".source = ../../../static/wallpaper.png;
+
+  programs.kitty = {
+    enable = true;
+    package = kittyPackage;
+    themeFile = "Catppuccin-Mocha";
+    font = {
+      name = "Fira Code";
+      size = 16;
+      package = pkgs.fira-code;
+    };
+    settings = {
+      shell = "fish";
+      shell_integration = "no-rc";
+      confirm_os_window_close = 0;
+      dynamic_background_opacity = true;
+      enable_audio_bell = false;
+      mouse_hide_wait = "-1.0";
+      window_padding_width = 10;
+      background_opacity = "1.0";
+      background_image = "wallpaper.png";
+      startup_session = "startup.conf";
+      background_image_layout = "cscaled";
+      hide_window_decorations = "yes";
+    };
+  };
+}

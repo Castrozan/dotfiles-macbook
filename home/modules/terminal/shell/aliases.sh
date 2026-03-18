@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+# Enable alias expansion in non-interactive shells (for Claude Code BASH_ENV)
+shopt -s expand_aliases
+
+# NixOS setuid wrappers (sudo, ping, etc) — non-login shells miss this
+[[ -d /run/wrappers/bin ]] && [[ ":$PATH:" != *":/run/wrappers/bin:"* ]] && export PATH="/run/wrappers/bin:$PATH"
+
+. "$HOME/.dotfiles/home/modules/terminal/shell/nix-memory-limit.sh"
+
+# Personal aliases
+alias clebr='cd $HOME/.clebr'
+alias bashrc='nvim ~/.bashrc'
+alias b='btop'
+alias c='code'
+alias ca='claude'
+alias cl='claude'
+alias cla='claude'
+alias cal='claude'
+alias clau='claude'
+alias claud='claude'
+alias claude='claude'
+alias co='codex'
+alias cat='cat'
+alias catt='bat'
+alias cd.='cd ..'
+alias cd..='cd ..'
+alias code='code . -n'
+. "$HOME/.dotfiles/home/modules/terminal/shell/cursor.sh"
+alias d='lazydocker'
+alias dotfiles='cd ~/.dotfiles'
+alias g='lazygit'
+alias gc='nix-gc'
+alias game-shift='sudo game-shift'
+alias grep='grep --color=auto'
+alias i='idea . > /dev/null 2>&1 & disown'
+alias k='k9s'
+alias kc="nvim ~/.config/kitty/kitty.conf"
+alias l='eza --classify'
+alias la='eza --all'
+alias lc='eza --all --color=never'
+alias ll='eza --long --all --classify --git --icons'
+alias ls='eza --color=auto'
+alias lt='eza --tree --level=2 --icons'
+alias n='nvim'
+alias nord-off='sudo ~/.dotfiles/home/modules/network/scripts/nord-off'
+alias nord-on-us='sudo ~/.dotfiles/home/modules/network/scripts/nord-on-us'
+alias obsidian='obsidian >/dev/null 2>&1 & disown'
+alias oo='cd $OBSIDIAN_HOME'
+alias repo='cd $HOME/repo'
+alias rga-fzf='rga-fzf'
+alias run-endpoint-monitor='nix-shell $HOME/repo/notifications/shell.nix --run "python $HOME/repo/notifications/app.py"'
+alias satc='cd $HOME/repo/satc'
+alias scripts='cd $HOME/repo/scripts'
+alias source-shell='source ~/.bashrc'
+alias t='tmux attach -t screensaver 2>/dev/null || _start_tmux'
+alias todo='cd $HOME/vault'
+alias vial='Vial'
+alias workbench='cd $HOME/workbench || $EDITOR $HOME/workbench'
+alias y='yazi'
+# TODO: fix vivaldi, it should not be running as flatpak
+alias vivaldi="flatpak run com.vivaldi.Vivaldi"
+
+PRIVATE_SHELL_ALIASES="$HOME/.dotfiles/private-config/shell/aliases.sh"
+# shellcheck disable=SC1090
+if [ -f "$PRIVATE_SHELL_ALIASES" ]; then
+	. "$PRIVATE_SHELL_ALIASES"
+fi

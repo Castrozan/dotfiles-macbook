@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONTINUATION_PROMPT="${1:-}"
+
+BASH_TOOL_PID="$PPID"
+CLAUDE_PID=$(ps -p "$BASH_TOOL_PID" -o ppid= 2>/dev/null | tr -d ' ')
+CLAUDE_COMMAND_NAME=$(ps -p "$CLAUDE_PID" -o comm= 2>/dev/null || echo "unknown")
+
+if [[ "$CLAUDE_COMMAND_NAME" != "claude" ]]; then
+	echo "Safety check FAILED: Expected 'claude' but found '$CLAUDE_COMMAND_NAME' (PID: $CLAUDE_PID)"
+	echo "Use /exit or Ctrl+D instead."
+	exit 1
+fi
+
+if [[ -z "${TMUX:-}" ]]; then
+	echo "Not in tmux — cannot auto-restart."
+	echo "Use /exit then manually: claude --continue"
+	exit 1
+fi
+
+CURRENT_TMUX_PANE="$TMUX_PANE"
+
+CLAUDE_CMDLINE=$(tr '\0' ' ' </proc/"$CLAUDE_PID"/cmdline)
+EXTRACTED_SESSION_ID=""
+if [[ "$CLAUDE_CMDLINE" =~ --resume[[:space:]]+([a-f0-9-]+) ]]; then
+	EXTRACTED_SESSION_ID="${BASH_REMATCH[1]}"
+elif [[ "$CLAUDE_CMDLINE" =~ --session-id[[:space:]]+([a-f0-9-]+) ]]; then
+	EXTRACTED_SESSION_ID="${BASH_REMATCH[1]}"
+fi
+
+if [[ -n "$EXTRACTED_SESSION_ID" ]]; then
+	RESUME_COMMAND="claude --resume $EXTRACTED_SESSION_ID"
+else
+	RESUME_COMMAND="claude --continue"
+fi
+
+echo "Restarting with: $RESUME_COMMAND"
+
+nohup bash -c "
+    while kill -0 $CLAUDE_PID 2>/dev/null; do sleep 0.2; done
+    sleep 1
+    tmux send-keys -t '$CURRENT_TMUX_PANE' '$RESUME_COMMAND' Enter
+
+    if [[ -n '$CONTINUATION_PROMPT' ]]; then
+        for ATTEMPT in \$(seq 1 60); do
+            PANE_CONTENT=\$(tmux capture-pane -t '$CURRENT_TMUX_PANE' -p -S -5)
+            if echo \"\$PANE_CONTENT\" | grep -q '❯'; then
+                break
+            fi
+            sleep 1
+        done
+        sleep 2
+        tmux send-keys -t '$CURRENT_TMUX_PANE' '$CONTINUATION_PROMPT' Enter
+    fi
+" &>/dev/null &
+disown
+
+kill -TERM "$CLAUDE_PID"

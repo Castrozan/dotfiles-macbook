@@ -1,0 +1,38 @@
+
+# git worktrees
+.worktrees/
+
+# Deep-work context workspaces (local-only session artifacts)
+.deep-work/
+
+# Home-manager deployed (source: agents/, run ./bin/rebuild)
+/CLAUDE.md
+/CLAUDE.md.*
+/AGENTS.md
+/AGENTS.md.*
+.cursor/
+home/modules/cursor/cursor-global-user-rules.md
+
+# Nix build output
+result
+
+# Test coverage output
+tests/coverage/
+
+# Test status tracking (local-only pass/fail records)
+.test-status/
+
+# Node
+node_modules/
+
+# Python cache
+__pycache__/
+.pytest_cache/
+
+# Ruff cache
+.ruff_cache/
+
+.cache/
+snapshot.json
+/.config/cava/
+/.config/pulse/
