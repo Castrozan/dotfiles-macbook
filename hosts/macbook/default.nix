@@ -39,6 +39,14 @@
         "com.apple.AppleMultitouchTrackpad"."TrackpadFiveFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFourFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFiveFingerPinchGesture" = 0;
+        "com.apple.symbolichotkeys".AppleSymbolicHotKeys = {
+          "79" = {
+            enabled = false;
+          };
+          "80" = {
+            enabled = false;
+          };
+        };
         "com.lwouis.alt-tab-macos" = {
           appsToShow = 0;
           spacesToShow = 1;
