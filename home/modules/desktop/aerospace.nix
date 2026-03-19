@@ -22,12 +22,16 @@
       };
 
       gaps = {
-        inner.horizontal = 10;
-        inner.vertical = 10;
-        outer.left = 10;
-        outer.right = 10;
-        outer.top = 10;
-        outer.bottom = 10;
+        inner = {
+          horizontal = 10;
+          vertical = 10;
+        };
+        outer = {
+          left = 10;
+          right = 10;
+          top = 10;
+          bottom = 10;
+        };
       };
 
       mode.main.binding = {
