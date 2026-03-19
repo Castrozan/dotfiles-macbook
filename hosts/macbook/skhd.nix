@@ -1,3 +1,4 @@
+{ lib, ... }:
 {
   services.skhd = {
     enable = true;
@@ -26,4 +27,10 @@
 
     '';
   };
+
+  launchd.user.agents.skhd.serviceConfig.ProgramArguments = lib.mkForce [
+    "/usr/local/bin/skhd"
+    "-c"
+    "/etc/skhdrc"
+  ];
 }

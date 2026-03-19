@@ -75,6 +75,13 @@
 
   system.activationScripts.postActivation.text = ''
     osascript -e 'tell application "System Events" to tell every desktop to set picture to "/Users/${username}/.dotfiles/static/alter-jellyfish-dark.jpg"' || true
+
+    echo "copying yabai and skhd to stable paths for TCC persistence..." >&2
+    mkdir -p /usr/local/bin
+    cp -f ${pkgs.yabai}/bin/yabai /usr/local/bin/yabai
+    cp -f ${pkgs.skhd}/bin/skhd /usr/local/bin/skhd
+    codesign -fs "nix-darwin-codesign" /usr/local/bin/yabai
+    codesign -fs "nix-darwin-codesign" /usr/local/bin/skhd
   '';
 
   launchd.user.agents.quit-finder-on-login = {
