@@ -115,10 +115,6 @@
   programs.fish.useBabelfish = true;
 
   security = {
-    accessibilityPrograms = [
-      "${pkgs.yabai}/bin/yabai"
-      "${pkgs.skhd}/bin/skhd"
-    ];
     pam.services.sudo_local.touchIdAuth = true;
     sudo.extraConfig = ''
       ${username} ALL=(ALL) NOPASSWD: ALL
