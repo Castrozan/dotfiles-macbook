@@ -16,7 +16,7 @@
     jq
     nixd
     nixfmt-rfc-style
-    nodejs
+    nodejs_20
     ripgrep-all
     ruff
     shellcheck
