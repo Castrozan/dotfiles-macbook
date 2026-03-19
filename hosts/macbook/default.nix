@@ -8,6 +8,7 @@
   imports = [
     ./yabai.nix
     ./workspace-window-switcher.nix
+    ./scripts/rebuild.nix
   ];
   users.users.${username} = {
     name = username;

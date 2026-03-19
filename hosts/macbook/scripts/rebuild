@@ -5,47 +5,47 @@ readonly DOTFILES_DIRECTORY="$HOME/.dotfiles"
 readonly FLAKE_REFERENCE="${DOTFILES_DIRECTORY}#macbook"
 
 _source_nix_daemon_if_needed() {
-    if ! command -v nix &>/dev/null; then
-        if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
-            # shellcheck disable=SC1091
-            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-        else
-            echo "error: nix is not available and nix-daemon.sh not found" >&2
-            return 1
-        fi
-    fi
+	if ! command -v nix &>/dev/null; then
+		if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+			# shellcheck disable=SC1091
+			. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+		else
+			echo "error: nix is not available and nix-daemon.sh not found" >&2
+			return 1
+		fi
+	fi
 }
 
 _ensure_darwin_rebuild_available() {
-    if ! command -v darwin-rebuild &>/dev/null; then
-        export PATH="/run/current-system/sw/bin:$PATH"
-    fi
-    if ! command -v darwin-rebuild &>/dev/null; then
-        echo "error: darwin-rebuild not found" >&2
-        return 1
-    fi
+	if ! command -v darwin-rebuild &>/dev/null; then
+		export PATH="/run/current-system/sw/bin:$PATH"
+	fi
+	if ! command -v darwin-rebuild &>/dev/null; then
+		echo "error: darwin-rebuild not found" >&2
+		return 1
+	fi
 }
 
 _stage_unstaged_nix_files() {
-    local unstaged_nix_files
-    unstaged_nix_files=$(git -C "$DOTFILES_DIRECTORY" diff --name-only -- '*.nix' 2>/dev/null || true)
-    if [[ -n "$unstaged_nix_files" ]]; then
-        echo "staging modified nix files:" >&2
-        while IFS= read -r nix_file; do
-            echo "  $nix_file" >&2
-            git -C "$DOTFILES_DIRECTORY" add "$DOTFILES_DIRECTORY/$nix_file"
-        done <<< "$unstaged_nix_files"
-    fi
+	local unstaged_nix_files
+	unstaged_nix_files=$(git -C "$DOTFILES_DIRECTORY" diff --name-only -- '*.nix' 2>/dev/null || true)
+	if [[ -n "$unstaged_nix_files" ]]; then
+		echo "staging modified nix files:" >&2
+		while IFS= read -r nix_file; do
+			echo "  $nix_file" >&2
+			git -C "$DOTFILES_DIRECTORY" add "$DOTFILES_DIRECTORY/$nix_file"
+		done <<<"$unstaged_nix_files"
+	fi
 }
 
 main() {
-    _source_nix_daemon_if_needed
-    _ensure_darwin_rebuild_available
-    _stage_unstaged_nix_files
+	_source_nix_daemon_if_needed
+	_ensure_darwin_rebuild_available
+	_stage_unstaged_nix_files
 
-    echo "rebuilding darwin configuration from ${FLAKE_REFERENCE}..." >&2
-    sudo darwin-rebuild switch --flake "$FLAKE_REFERENCE" "$@"
-    echo "rebuild complete" >&2
+	echo "rebuilding darwin configuration from ${FLAKE_REFERENCE}..." >&2
+	sudo darwin-rebuild switch --flake "$FLAKE_REFERENCE" "$@"
+	echo "rebuild complete" >&2
 }
 
 main "$@"

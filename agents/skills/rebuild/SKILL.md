@@ -8,11 +8,21 @@ description: Apply Nix configuration changes. Use when modifying .nix files, aft
 </announcement>
 
 <prerequisite>
-Nix reads from git index, not working tree. Stage all modified .nix files before rebuilding. Never use `git add -A` or `git add .` (may stage unrelated parallel work).
+Nix reads from git index, not working tree. Stage all modified .nix files before rebuilding. Never use `git add -A` or `git add .` (may stage unrelated parallel work). The rebuild script auto-stages unstaged .nix files, but you should still commit first per git conventions.
 </prerequisite>
 
 <execution>
-Run `rebuild` — it auto-detects platform (NixOS vs standalone home-manager) and user. Sources nix-daemon.sh if needed. If `nix: command not found`, source `. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh` first.
+The `rebuild` script is packaged via `hosts/macbook/scripts/rebuild.nix` and available in PATH after first install. It sources nix-daemon.sh if needed, stages unstaged .nix files, and runs `sudo darwin-rebuild switch --flake ~/.dotfiles#macbook`. Pass extra args like `--dry-run` directly.
+
+The Bash tool does not inherit the user's full PATH. To run rebuild from Claude Code's Bash tool:
+```
+export PATH="/run/current-system/sw/bin:/etc/profiles/per-user/lucas.zanoni/bin:/nix/var/nix/profiles/default/bin:$PATH" && rebuild
+```
+
+For the first bootstrap (before the rebuild script exists in PATH), run directly:
+```
+export PATH="/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH" && sudo darwin-rebuild switch --flake ~/.dotfiles#macbook
+```
 </execution>
 
 <timeout_trap>
@@ -20,15 +30,9 @@ Run rebuild in the background with short poll intervals. Never use process poll 
 </timeout_trap>
 
 <dry_run>
-Validate configuration before applying by running `rebuild` with `--dry-run`. Catches syntax errors, missing imports, and evaluation failures without modifying the system.
+Validate configuration before applying by running `rebuild --dry-run`. Catches syntax errors, missing imports, and evaluation failures without modifying the system.
 </dry_run>
 
-<platform_difference>
-NixOS: Full system rebuild affecting services, kernel, boot. Home-manager is integrated as a module.
-Home-manager standalone: User-level only — packages, dotfiles, user services.
-The rebuild script handles detection automatically.
-</platform_difference>
-
 <troubleshooting>
-Build fails with import error: file not staged (check git status). Attribute not found: module not imported in home.nix or configuration.nix. Unfree package: rebuild sets NIXPKGS_ALLOW_UNFREE=1. Rate limit: install home-manager locally. Wrong config: session-context User field must match flake configuration name.
+Build fails with import error: file not staged (check git status). Attribute not found: module not imported in home.nix or configuration.nix. Unfree package: nixpkgs config sets allowUnfree. Wrong config: flake output is `darwinConfigurations.macbook`.
 </troubleshooting>

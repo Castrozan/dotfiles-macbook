@@ -29,12 +29,12 @@ def is_nix_file(path: str) -> bool:
     """Check if the file is a nix configuration file."""
     if not path:
         return False
-    
+
     # Check extension
     for pattern in NIX_FILE_PATTERNS:
         if path.endswith(pattern):
             return True
-    
+
     return False
 
 
@@ -42,11 +42,11 @@ def is_system_config(path: str) -> bool:
     """Check if this nix file is part of system/home configuration."""
     if not path:
         return False
-    
+
     for system_path in SYSTEM_PATHS:
         if system_path in path:
             return True
-    
+
     return False
 
 
@@ -59,14 +59,14 @@ def main():
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input", {})
     tool_output = data.get("tool_output", {})
-    
+
     # Only process Edit and Write operations
     if tool_name not in ["Edit", "Write"]:
         sys.exit(0)
 
     # Get the file path from input
     file_path = tool_input.get("file_path", "") or tool_input.get("path", "")
-    
+
     if not file_path:
         sys.exit(0)
 
@@ -81,10 +81,8 @@ def main():
             "systemMessage": (
                 f"🔧 NIX FILE CHANGED: {os.path.basename(file_path)}\n"
                 "Remember to rebuild to apply changes:\n"
-                "  • System: nixos-rebuild switch --flake .#\n"
-                "  • Home: home-manager switch --flake .#\n"
-                "  • Both: ./bin/rebuild or use the /rebuild skill"
-            )
+                "  • Run `rebuild` in terminal, or use the /rebuild skill"
+            ),
         }
         print(json.dumps(output))
     else:
@@ -94,7 +92,7 @@ def main():
             "systemMessage": (
                 f"📝 Nix file modified: {os.path.basename(file_path)}\n"
                 "Run `nix flake check` or rebuild if this affects system config."
-            )
+            ),
         }
         print(json.dumps(output))
 
