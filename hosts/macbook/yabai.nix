@@ -53,7 +53,7 @@ in
   };
 
   launchd.user.agents.yabai.serviceConfig.ProgramArguments = lib.mkForce [
-    "/usr/local/bin/yabai"
+    "/Applications/Yabai.app/Contents/MacOS/yabai"
     "-c"
     "${yabaiConfigFile}"
   ];

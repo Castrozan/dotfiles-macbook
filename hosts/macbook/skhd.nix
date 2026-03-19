@@ -29,7 +29,7 @@
   };
 
   launchd.user.agents.skhd.serviceConfig.ProgramArguments = lib.mkForce [
-    "/usr/local/bin/skhd"
+    "/Applications/Skhd.app/Contents/MacOS/skhd"
     "-c"
     "/etc/skhdrc"
   ];

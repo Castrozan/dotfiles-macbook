@@ -76,12 +76,37 @@
   system.activationScripts.postActivation.text = ''
     osascript -e 'tell application "System Events" to tell every desktop to set picture to "/Users/${username}/.dotfiles/static/alter-jellyfish-dark.jpg"' || true
 
-    echo "copying yabai and skhd to stable paths for TCC persistence..." >&2
-    mkdir -p /usr/local/bin
-    cp -f ${pkgs.yabai}/bin/yabai /usr/local/bin/yabai
-    cp -f ${pkgs.skhd}/bin/skhd /usr/local/bin/skhd
-    codesign -fs "nix-darwin-codesign" --keychain /Library/Keychains/System.keychain /usr/local/bin/yabai
-    codesign -fs "nix-darwin-codesign" --keychain /Library/Keychains/System.keychain /usr/local/bin/skhd
+    echo "copying yabai and skhd into app bundles for stable TCC..." >&2
+    mkdir -p /Applications/Yabai.app/Contents/MacOS /Applications/Skhd.app/Contents/MacOS
+
+    cat > /Applications/Yabai.app/Contents/Info.plist <<PLIST
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0"><dict>
+      <key>CFBundleIdentifier</key><string>com.dotfiles.yabai</string>
+      <key>CFBundleName</key><string>Yabai</string>
+      <key>CFBundleExecutable</key><string>yabai</string>
+      <key>CFBundleVersion</key><string>1.0</string>
+      <key>LSUIElement</key><true/>
+    </dict></plist>
+    PLIST
+
+    cat > /Applications/Skhd.app/Contents/Info.plist <<PLIST
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0"><dict>
+      <key>CFBundleIdentifier</key><string>com.dotfiles.skhd</string>
+      <key>CFBundleName</key><string>Skhd</string>
+      <key>CFBundleExecutable</key><string>skhd</string>
+      <key>CFBundleVersion</key><string>1.0</string>
+      <key>LSUIElement</key><true/>
+    </dict></plist>
+    PLIST
+
+    cp -f ${pkgs.yabai}/bin/yabai /Applications/Yabai.app/Contents/MacOS/yabai
+    cp -f ${pkgs.skhd}/bin/skhd /Applications/Skhd.app/Contents/MacOS/skhd
+    codesign -fs "nix-darwin-codesign" --keychain /Library/Keychains/System.keychain /Applications/Yabai.app
+    codesign -fs "nix-darwin-codesign" --keychain /Library/Keychains/System.keychain /Applications/Skhd.app
   '';
 
   launchd.user.agents.quit-finder-on-login = {
