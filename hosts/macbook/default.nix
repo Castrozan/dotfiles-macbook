@@ -80,8 +80,8 @@
     mkdir -p /usr/local/bin
     cp -f ${pkgs.yabai}/bin/yabai /usr/local/bin/yabai
     cp -f ${pkgs.skhd}/bin/skhd /usr/local/bin/skhd
-    codesign -fs "nix-darwin-codesign" /usr/local/bin/yabai
-    codesign -fs "nix-darwin-codesign" /usr/local/bin/skhd
+    codesign -fs "nix-darwin-codesign" --keychain /Library/Keychains/System.keychain /usr/local/bin/yabai
+    codesign -fs "nix-darwin-codesign" --keychain /Library/Keychains/System.keychain /usr/local/bin/skhd
   '';
 
   launchd.user.agents.quit-finder-on-login = {
