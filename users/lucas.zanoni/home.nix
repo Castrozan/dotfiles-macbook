@@ -28,6 +28,7 @@
     ../../home/modules/editor/neovim.nix
     ../../home/modules/editor/vscode/vscode.nix
 
+    ../../home/modules/desktop/aerospace.nix
     ../../home/modules/desktop/fonts.nix
     ../../home/modules/desktop/karabiner.nix
     ../../home/modules/desktop/spaceman.nix
