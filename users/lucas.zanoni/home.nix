@@ -40,5 +40,7 @@
 
     ../../home/modules/media/bad-apple.nix
     ../../home/modules/gaming/cmatrix.nix
+
+    ../../private-config/sb-toolkit
   ];
 }
