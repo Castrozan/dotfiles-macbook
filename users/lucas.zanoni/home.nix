@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   imports = [
     ./pkgs.nix
@@ -41,6 +42,6 @@
     ../../home/modules/media/bad-apple.nix
     ../../home/modules/gaming/cmatrix.nix
 
-    ../../private-config/sb-toolkit
+    "${inputs.private-config}/sb-toolkit"
   ];
 }

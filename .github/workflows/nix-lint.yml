@@ -36,7 +36,7 @@ jobs:
             -exec nix run nixpkgs#nixfmt-rfc-style -- --check {} +
 
       - name: Flake metadata (syntax check)
-        run: nix flake metadata
+        run: nix flake metadata --no-update-lock-file
 
       - name: Free disk space
         run: |
@@ -44,9 +44,4 @@ jobs:
           df -h /
 
       - name: Nix flake checks
-        run: nix flake check --print-build-logs --show-trace
-
-      - name: Darwin config (dry eval)
-        run: |
-          nix eval .#darwinConfigurations.macbook.config.system.build.toplevel --raw 2>/dev/null || \
-          echo "Skipped: darwin eval not supported on Linux runners"
+        run: nix flake check --no-update-lock-file --print-build-logs --show-trace

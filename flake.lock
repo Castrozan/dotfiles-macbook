@@ -442,6 +442,22 @@
         "type": "github"
       }
     },
+    "private-config": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774027126,
+        "narHash": "sha256-0tPSPd+nNDHQxHjgGherTDdU7+sA3sNwUnWcY8hGuQQ=",
+        "ref": "refs/heads/master",
+        "rev": "3f4831aaa168fe5b61cd1e9bb442ccb9857fc68d",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/Castrozan/private-config"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/Castrozan/private-config"
+      }
+    },
     "root": {
       "inputs": {
         "cmatrix": "cmatrix",
@@ -451,7 +467,8 @@
         "nix-darwin": "nix-darwin",
         "nixpkgs": "nixpkgs_5",
         "nixpkgs-latest": "nixpkgs-latest",
-        "nixpkgs-unstable": "nixpkgs-unstable"
+        "nixpkgs-unstable": "nixpkgs-unstable",
+        "private-config": "private-config"
       }
     },
     "systems": {

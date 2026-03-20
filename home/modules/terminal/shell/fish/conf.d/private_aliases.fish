@@ -1,4 +1,8 @@
-set -l privateAliasesFile "$HOME/.dotfiles/private-config/shell/aliases.sh"
+if not set -q PRIVATE_CONFIG_DIR
+    return
+end
+
+set -l privateAliasesFile "$PRIVATE_CONFIG_DIR/shell/aliases.sh"
 
 if not test -f $privateAliasesFile
     return

@@ -13,7 +13,7 @@
     lazygit.url = "github:Castrozan/lazygit";
     cmatrix.url = "github:castrozan/cmatrix";
     private-config = {
-      url = "github:Castrozan/private-config";
+      url = "git+ssh://git@github.com/Castrozan/private-config";
       flake = false;
     };
   };
