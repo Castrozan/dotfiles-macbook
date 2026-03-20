@@ -22,7 +22,7 @@ jobs:
             experimental-features = nix-command flakes
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v9
+      - uses: DeterminateSystems/flakehub-cache-action@v2
 
       - name: statix
         run: nix run nixpkgs#statix -- check . --ignore 'result*'
