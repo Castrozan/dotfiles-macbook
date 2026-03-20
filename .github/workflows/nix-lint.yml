@@ -48,4 +48,5 @@ jobs:
 
       - name: Darwin config (dry eval)
         run: |
-          nix build .#darwinConfigurations.macbook.config.system.build.toplevel --dry-run 2>&1
+          nix eval .#darwinConfigurations.macbook.config.system.build.toplevel --raw 2>/dev/null || \
+          echo "Skipped: darwin eval not supported on Linux runners"

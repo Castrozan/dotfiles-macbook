@@ -12,6 +12,10 @@
     devenv.url = "github:cachix/devenv/v1.11.2";
     lazygit.url = "github:Castrozan/lazygit";
     cmatrix.url = "github:castrozan/cmatrix";
+    private-config = {
+      url = "github:Castrozan/private-config";
+      flake = false;
+    };
   };
 
   outputs =

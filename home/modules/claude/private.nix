@@ -1,6 +1,6 @@
-{ lib, ... }:
+{ lib, inputs, ... }:
 let
-  privateConfigDir = ../../../private-config/claude;
+  privateConfigDir = inputs.private-config + "/claude";
   agentsDir = privateConfigDir + "/agents";
   skillsDir = privateConfigDir + "/skills";
 
