@@ -1,8 +1,8 @@
 import subprocess
 import sys
 
-WORK_NAME = "Lucas de Castro Zanoni"
-WORK_EMAIL = "lucas.zanoni@betha.com.br"
+WORK_NAME = "Lucas Zanoni"
+WORK_EMAIL = "lucas.zanoni@coatesgroup.com"
 
 PERSONAL_NAME = "Castrozan"
 PERSONAL_EMAIL = "castro.lucas290@gmail.com"
