@@ -21,6 +21,7 @@ let
   cfg =
     (inputs.home-manager.lib.homeManagerConfiguration {
       inherit pkgs;
+      extraSpecialArgs = { inherit inputs; };
       modules = [
         self.homeManagerModules.claude-code
         {

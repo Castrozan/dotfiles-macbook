@@ -3,7 +3,7 @@
   imports = [
     ./pkgs.nix
 
-    ./home/git-devpro.nix
+    ./home/git.nix
     ./home/ssh.nix
     ./home/session-vars.nix
 
@@ -39,8 +39,8 @@
     ../../home/modules/dev/lazygit.nix
     ../../home/modules/dev/scripts.nix
 
-    ../../home/modules/media/bad-apple.nix
-    ../../home/modules/gaming/cmatrix.nix
+    ../../home/modules/terminal/bad-apple.nix
+    ../../home/modules/terminal/cmatrix.nix
 
     "${inputs.private-config}/sb-toolkit"
   ];
