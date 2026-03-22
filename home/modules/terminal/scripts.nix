@@ -6,6 +6,5 @@
     (pkgs.writeShellScriptBin "tmux-editor-toggle" (builtins.readFile ./scripts/tmux-editor-toggle))
     (pkgs.writeShellScriptBin "tmux-resurrect" (builtins.readFile ./scripts/tmux-resurrect))
     (pkgs.writeShellScriptBin "tmux-session-chooser" (builtins.readFile ./scripts/tmux-session-chooser))
-    (pkgs.writeShellScriptBin "set-random-bg-kitty" (builtins.readFile ./scripts/set-random-bg-kitty))
   ];
 }

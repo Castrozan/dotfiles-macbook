@@ -12,5 +12,5 @@ After completing substantial work: file edits, implementations, long commands, m
 </when_to_use>
 
 <channels>
-Desktop (default): TTS + notify-send popup. Mobile (--mobile flag): ntfy.sh push notification, bypasses DND at priority 4+.
+Desktop (default): macOS uses `say` + `osascript` notification; Linux uses edge-tts + mpv + notify-send. Mobile (--mobile flag): ntfy.sh push notification, bypasses DND at priority 4+.
 </channels>
