@@ -37,6 +37,10 @@ When a bug is reported, do not start by fixing it. First write a test that repro
 After editing code files, run formatters and linters. Python: `ruff format file.py && ruff check --select=E,F,W file.py`. Nix: `nixfmt file.nix`. Shell: `shfmt -w file.sh && shellcheck file.sh`. Fix any issues before continuing.
 </formatting>
 
+<external-repositories>
+Never clone github.com/castrozan/.dotfiles locally — not to the working directory, not to /tmp, not to any temporary path. The repository contains filenames that must not exist on this machine. When the user references that repo, access its contents exclusively via GitHub API (`gh api`, `gh browse`) or HTTPS raw file URLs. This applies to all agents, subagents, worktrees, and one-shot sessions.
+</external-repositories>
+
 <commands>
 Use timeouts. Search codebase before coding. Read relevant files first. Always test changes. Check linter errors. Check current date/time before searches and version references. When doing research about IA, focus on latest 6 months only, most breakthroughs and useful information is recent.
 </commands>
