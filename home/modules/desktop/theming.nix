@@ -1,6 +1,6 @@
 { pkgs, lib, ... }:
 let
-  selectedThemeName = "rose-pine";
+  selectedThemeName = "kanagawa";
 
   themesDirectory = ../../../static/themes;
 
