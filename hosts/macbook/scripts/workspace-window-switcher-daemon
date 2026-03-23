@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
+import glob
 import json
 import os
 import socket
-import subprocess
 import threading
 import warnings
 
@@ -29,86 +29,77 @@ COMMIT_TIMEOUT_SECONDS = 3.0
 
 class AeroSpaceWindowProvider:
     def __init__(self):
-        self._cached_binary_path = None
+        self._cached_socket_path = None
+        self._json_decoder = json.JSONDecoder()
 
-    def _resolve_binary_path(self):
+    def _resolve_aerospace_socket_path(self):
+        username = os.environ.get("USER", os.getlogin())
+        expected_path = f"/tmp/bobko.aerospace-{username}.sock"
+        if os.path.exists(expected_path):
+            return expected_path
+        matching_sockets = glob.glob("/tmp/bobko.aerospace-*.sock")
+        return matching_sockets[0] if matching_sockets else None
+
+    def _get_socket_path(self):
+        if self._cached_socket_path is None:
+            self._cached_socket_path = self._resolve_aerospace_socket_path()
+        return self._cached_socket_path
+
+    def _send_ipc_command(self, args):
+        socket_path = self._get_socket_path()
+        if socket_path is None:
+            return None
         try:
-            pgrep_result = subprocess.run(
-                ["pgrep", "-x", "AeroSpace"],
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if pgrep_result.returncode != 0 or not pgrep_result.stdout.strip():
+            ipc_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            ipc_socket.settimeout(2)
+            ipc_socket.connect(socket_path)
+            request_payload = json.dumps(
+                {"args": args, "stdin": "", "windowId": None, "workspace": None}
+            ).encode()
+            ipc_socket.sendall(request_payload)
+            ipc_socket.shutdown(socket.SHUT_WR)
+            response_data = b""
+            while True:
+                chunk = ipc_socket.recv(4096)
+                if not chunk:
+                    break
+                response_data += chunk
+            ipc_socket.close()
+            response, _ = self._json_decoder.raw_decode(response_data.decode())
+            if response.get("exitCode", 1) != 0:
                 return None
-            pid = pgrep_result.stdout.strip().split("\n")[0]
-            lsof_result = subprocess.run(
-                ["lsof", "-p", pid], capture_output=True, text=True, timeout=2
-            )
-            for line in lsof_result.stdout.splitlines():
-                if "MacOS/AeroSpace" in line:
-                    application_path = line.split()[-1]
-                    nix_store_path = application_path.split("/Applications/")[0]
-                    return f"{nix_store_path}/bin/aerospace"
-        except subprocess.TimeoutExpired:
-            pass
-        return None
-
-    def _get_binary_path(self):
-        if self._cached_binary_path is None:
-            self._cached_binary_path = self._resolve_binary_path()
-        return self._cached_binary_path
-
-    def _invalidate_binary_cache(self):
-        self._cached_binary_path = None
+            return response.get("stdout", "")
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            self._cached_socket_path = None
+            return None
 
     def get_focused_workspace_windows(self):
-        binary_path = self._get_binary_path()
-        if binary_path is None:
+        stdout = self._send_ipc_command(
+            ["list-windows", "--workspace", "focused", "--json"]
+        )
+        if stdout is None:
             return []
         try:
-            result = subprocess.run(
-                [binary_path, "list-windows", "--workspace", "focused", "--json"],
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if result.returncode != 0:
-                self._invalidate_binary_cache()
-                return []
-            return json.loads(result.stdout)
-        except (subprocess.TimeoutExpired, json.JSONDecodeError):
-            self._invalidate_binary_cache()
+            return json.loads(stdout)
+        except json.JSONDecodeError:
             return []
 
     def get_focused_window_id(self):
-        binary_path = self._get_binary_path()
-        if binary_path is None:
+        stdout = self._send_ipc_command(
+            ["list-windows", "--focused", "--json"]
+        )
+        if stdout is None:
             return None
         try:
-            result = subprocess.run(
-                [binary_path, "list-windows", "--focused", "--json"],
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if result.returncode != 0:
-                return None
-            windows = json.loads(result.stdout)
+            windows = json.loads(stdout)
             return windows[0]["window-id"] if windows else None
-        except (subprocess.TimeoutExpired, json.JSONDecodeError):
+        except (json.JSONDecodeError, IndexError, KeyError):
             return None
 
     def focus_window(self, window_id):
-        binary_path = self._get_binary_path()
-        if binary_path is None:
-            return
-        try:
-            subprocess.run(
-                [binary_path, "focus", "--window-id", str(window_id)], timeout=2
-            )
-        except subprocess.TimeoutExpired:
-            pass
+        self._send_ipc_command(
+            ["focus", "--window-id", str(window_id)]
+        )
 
 
 class AppIconProvider:

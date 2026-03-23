@@ -1,3 +1,4 @@
+import json
 import os
 from unittest.mock import MagicMock, call, patch
 
@@ -398,85 +399,84 @@ class TestStateMachineWithTwoWindows:
         mock_aerospace_provider.focus_window.assert_called_with(2)
 
 
-class TestAeroSpaceWindowProviderBinaryResolution:
-    def test_resolves_binary_from_running_process(self):
+class TestAeroSpaceWindowProviderSocketResolution:
+    def test_resolves_socket_from_username(self, tmp_path):
         provider = daemon.AeroSpaceWindowProvider()
-        lsof_output = (
-            "AeroSp 12345 user txt REG 1,18 0 "
-            "/nix/store/abc123-aerospace/Applications/"
-            "AeroSpace.app/Contents/MacOS/AeroSpace\n"
-        )
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.side_effect = [
-                MagicMock(returncode=0, stdout="12345\n"),
-                MagicMock(returncode=0, stdout=lsof_output),
-            ]
-            binary_path = provider._resolve_binary_path()
-        assert binary_path == "/nix/store/abc123-aerospace/bin/aerospace"
+        socket_file = tmp_path / "bobko.aerospace-testuser.sock"
+        socket_file.touch()
+        with patch.dict(os.environ, {"USER": "testuser"}):
+            with patch.object(daemon.os.path, "exists", return_value=True):
+                result = provider._resolve_aerospace_socket_path()
+        assert "bobko.aerospace-testuser.sock" in result
 
-    def test_returns_none_when_aerospace_not_running(self):
+    def test_returns_none_when_no_socket_exists(self):
         provider = daemon.AeroSpaceWindowProvider()
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="")
-            binary_path = provider._resolve_binary_path()
-        assert binary_path is None
+        with patch.dict(os.environ, {"USER": "nonexistent"}):
+            with patch.object(daemon.os.path, "exists", return_value=False):
+                with patch.object(daemon.glob, "glob", return_value=[]):
+                    result = provider._resolve_aerospace_socket_path()
+        assert result is None
 
-    def test_caches_resolved_binary_path(self):
+    def test_caches_socket_path(self):
         provider = daemon.AeroSpaceWindowProvider()
-        provider._cached_binary_path = "/nix/store/cached/bin/aerospace"
-        assert provider._get_binary_path() == "/nix/store/cached/bin/aerospace"
+        provider._cached_socket_path = "/tmp/bobko.aerospace-cached.sock"
+        assert provider._get_socket_path() == "/tmp/bobko.aerospace-cached.sock"
 
-    def test_invalidates_cache_on_command_failure(self):
-        provider = daemon.AeroSpaceWindowProvider()
-        provider._cached_binary_path = "/nix/store/old/bin/aerospace"
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="")
-            result = provider.get_focused_workspace_windows()
-        assert result == []
-        assert provider._cached_binary_path is None
 
-    def test_returns_empty_list_when_no_binary(self):
+class TestAeroSpaceWindowProviderIpcCommands:
+    def test_parses_focused_workspace_windows(self):
         provider = daemon.AeroSpaceWindowProvider()
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="")
-            result = provider.get_focused_workspace_windows()
-        assert result == []
-
-    def test_parses_focused_workspace_windows_json(self):
-        provider = daemon.AeroSpaceWindowProvider()
-        provider._cached_binary_path = "/bin/aerospace"
         windows_json = '[{"window-id": 1, "app-name": "Test", "window-title": "t"}]'
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout=windows_json)
+        ipc_response = json.dumps(
+            {
+                "exitCode": 0,
+                "stdout": windows_json,
+                "stderr": "",
+                "serverVersionAndHash": "test",
+            }
+        )
+        with patch.object(provider, "_send_ipc_command", return_value=windows_json):
             result = provider.get_focused_workspace_windows()
         assert len(result) == 1
         assert result[0]["window-id"] == 1
 
+    def test_returns_empty_list_on_ipc_failure(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.object(provider, "_send_ipc_command", return_value=None):
+            result = provider.get_focused_workspace_windows()
+        assert result == []
+
     def test_extracts_focused_window_id(self):
         provider = daemon.AeroSpaceWindowProvider()
-        provider._cached_binary_path = "/bin/aerospace"
         focused_json = '[{"window-id": 42}]'
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout=focused_json)
+        with patch.object(provider, "_send_ipc_command", return_value=focused_json):
             result = provider.get_focused_window_id()
         assert result == 42
 
     def test_returns_none_focused_id_with_empty_list(self):
         provider = daemon.AeroSpaceWindowProvider()
-        provider._cached_binary_path = "/bin/aerospace"
-        with patch.object(daemon.subprocess, "run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="[]")
+        with patch.object(provider, "_send_ipc_command", return_value="[]"):
             result = provider.get_focused_window_id()
         assert result is None
 
-    def test_focus_window_calls_aerospace_with_correct_args(self):
+    def test_returns_none_focused_id_on_ipc_failure(self):
         provider = daemon.AeroSpaceWindowProvider()
-        provider._cached_binary_path = "/bin/aerospace"
-        with patch.object(daemon.subprocess, "run") as mock_run:
+        with patch.object(provider, "_send_ipc_command", return_value=None):
+            result = provider.get_focused_window_id()
+        assert result is None
+
+    def test_focus_window_sends_correct_args(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.object(provider, "_send_ipc_command") as mock_ipc:
             provider.focus_window(1234)
-            mock_run.assert_called_once_with(
-                ["/bin/aerospace", "focus", "--window-id", "1234"], timeout=2
-            )
+            mock_ipc.assert_called_once_with(["focus", "--window-id", "1234"])
+
+    def test_invalidates_socket_cache_on_connection_error(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        provider._cached_socket_path = "/tmp/nonexistent.sock"
+        result = provider._send_ipc_command(["list-windows", "--focused"])
+        assert result is None
+        assert provider._cached_socket_path is None
 
 
 class TestCommandSocketServerDispatch:
