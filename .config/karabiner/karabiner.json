@@ -811,7 +811,7 @@
                 },
                 "to": [
                   {
-                    "key_code": "w",
+                    "key_code": "q",
                     "modifiers": [
                       "command"
                     ]
