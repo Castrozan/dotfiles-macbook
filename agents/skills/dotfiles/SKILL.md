@@ -64,5 +64,4 @@ Python scripts are packaged via a module-level helper in scripts.nix (e.g. `mkSy
 </script_packaging>
 
 <relevant_skills>
-/hyprland-debug: Use for Hyprland/Wayland debugging - theme switching, service crashes, display issues, DRM conflicts.
 </relevant_skills>
