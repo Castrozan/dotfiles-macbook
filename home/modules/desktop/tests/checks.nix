@@ -17,12 +17,21 @@ let
   };
   inherit (helpers) mkEvalCheck;
 
-  cfg = helpers.homeManagerTestConfiguration [
+  fontsCfg = helpers.homeManagerTestConfiguration [
     ../fonts.nix
+  ];
+
+  maccyCfg = helpers.homeManagerTestConfiguration [
+    ../maccy.nix
   ];
 in
 {
   domain-desktop-fontconfig-enabled =
-    mkEvalCheck "domain-desktop-fontconfig-enabled" cfg.fonts.fontconfig.enable
+    mkEvalCheck "domain-desktop-fontconfig-enabled" fontsCfg.fonts.fontconfig.enable
       "fontconfig should be enabled";
+
+  domain-desktop-maccy-popup-shortcut-is-cmd-shift-v =
+    mkEvalCheck "domain-desktop-maccy-popup-shortcut-is-cmd-shift-v"
+      (lib.hasInfix ''carbonModifiers":768'' maccyCfg.home.activation.configureMaccyDefaults.data)
+      "Maccy popup should use Cmd+Shift+V (carbonModifiers 768) to avoid conflicting with Ctrl+V paste remap";
 }
