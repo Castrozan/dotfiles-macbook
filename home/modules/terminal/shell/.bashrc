@@ -107,14 +107,6 @@ is_wsl() {
 	[ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]
 }
 
-# Set random background image in Kitty terminal only on NixOS
-# TODO: some day this should be fixed
-# I really like custom switching backgrounds
-#if is_nixos; then
-#    if ps aux | grep "[k]itty" >/dev/null; then
-#        [ -n "$KITTY_WINDOW_ID" ] && set-random-bg-kitty
-#    fi
-#fi
 
 # Source bash completion
 if [ -f /etc/bash_completion ]; then

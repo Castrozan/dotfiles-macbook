@@ -115,6 +115,6 @@ in
   }
   // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
     "fish/conf.d/hyprland-env.fish".source = ./shell/fish/conf.d/hyprland-env.fish;
-    "fish/conf.d/betha-secrets.fish".source = ./shell/fish/conf.d/betha-secrets.fish;
+    "fish/conf.d/secrets.fish".source = ./shell/fish/conf.d/secrets.fish;
   };
 }

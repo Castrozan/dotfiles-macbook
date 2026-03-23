@@ -31,7 +31,6 @@ require('telescope').setup {
       ".pyenv",
       ".vscode",
       ".asdf",
-      "betha-fly"
     },
     vimgrep_arguments = {
       "rg",

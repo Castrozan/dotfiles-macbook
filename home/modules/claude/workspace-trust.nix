@@ -2,7 +2,6 @@
 let
   trustedParentDirectories = [
     "$HOME/repo"
-    "$HOME/betha-fly/projects"
   ];
 
   trustedDirectories = [
