@@ -54,7 +54,6 @@
         };
       };
       NSGlobalDomain = {
-        AppleInterfaceStyle = "Dark";
         "com.apple.swipescrolldirection" = false;
         NSAutomaticWindowAnimationsEnabled = false;
         NSWindowResizeTime = 0.001;

@@ -22,6 +22,37 @@ let
     themesDirectory + "/${selectedThemeName}/backgrounds/${firstBackgroundFileName}";
 
   removeHashFromColor = color: lib.removePrefix "#" color;
+
+  themeAccentColorHex = removeHashFromColor themeColorsToml.accent;
+
+  macosAppearanceActivationScript = ''
+    /usr/bin/osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to ${
+      if themeIsLight then "false" else "true"
+    }' || true
+
+    /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "${selectedWallpaperPath}"' || true
+
+    MACOS_ACCENT_COLOR=$(/usr/bin/python3 -c "
+    import colorsys
+    r, g, b = int('${themeAccentColorHex}'[0:2], 16)/255, int('${themeAccentColorHex}'[2:4], 16)/255, int('${themeAccentColorHex}'[4:6], 16)/255
+    h, _, s = colorsys.rgb_to_hsv(r, g, b)
+    hue = h * 360
+    if s < 0.1: print(-1)
+    elif hue < 15 or hue >= 345: print(0)
+    elif hue < 45: print(1)
+    elif hue < 75: print(2)
+    elif hue < 165: print(3)
+    elif hue < 255: print(4)
+    elif hue < 300: print(5)
+    else: print(6)
+    ")
+
+    if [ "$MACOS_ACCENT_COLOR" = "4" ]; then
+      /usr/bin/defaults delete -g AppleAccentColor 2>/dev/null || true
+    else
+      /usr/bin/defaults write -g AppleAccentColor -int "$MACOS_ACCENT_COLOR"
+    fi
+  '';
 in
 {
   stylix = {
@@ -95,7 +126,7 @@ in
     };
   };
 
-  home.activation.setMacosDesktopWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "${selectedWallpaperPath}"' || true
-  '';
+  home.activation.applyMacosThemeAppearance = lib.hm.dag.entryAfter [
+    "writeBoundary"
+  ] macosAppearanceActivationScript;
 }
