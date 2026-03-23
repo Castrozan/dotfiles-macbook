@@ -84,7 +84,7 @@ in
       wezterm.enable = true;
       bat.enable = true;
       btop.enable = true;
-      yazi.enable = true;
+      yazi.enable = false;
       lazygit.enable = true;
 
       tmux.enable = false;
