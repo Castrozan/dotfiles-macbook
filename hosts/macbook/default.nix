@@ -34,6 +34,12 @@
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFourFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFiveFingerPinchGesture" = 0;
         "com.apple.symbolichotkeys".AppleSymbolicHotKeys = {
+          "32" = {
+            enabled = false;
+          };
+          "33" = {
+            enabled = false;
+          };
           "79" = {
             enabled = false;
           };
