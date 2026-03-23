@@ -32,6 +32,13 @@ let
     }
   ];
 
+  onlyTerminalsCondition = [
+    {
+      type = "frontmost_application_if";
+      bundle_identifiers = terminalBundleIdentifiers;
+    }
+  ];
+
   makeCorneDeadKeyToRegularManipulators = key_code: [
     {
       type = "basic";
@@ -204,6 +211,27 @@ let
                   "left_command"
                   "right_command"
                 ];
+          }
+          {
+            description = "Ctrl+Right to F20 in terminals (bypasses macOS menu interception)";
+            manipulators = [
+              {
+                type = "basic";
+                from = {
+                  key_code = "right_arrow";
+                  modifiers = {
+                    mandatory = [ "control" ];
+                    optional = [ "shift" ];
+                  };
+                };
+                to = [
+                  {
+                    key_code = "f20";
+                  }
+                ];
+                conditions = onlyTerminalsCondition;
+              }
+            ];
           }
           {
             description = "Ctrl+Arrow to Option+Arrow for word jumping (except in terminals)";
