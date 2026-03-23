@@ -74,7 +74,7 @@
 
         cmd-tab = "exec-and-forget /usr/bin/python3 /Users/${username}/.dotfiles/hosts/macbook/scripts/workspace-window-switcher";
 
-        alt-f = "fullscreen";
+        cmd-f = "fullscreen";
 
         cmd-left = "focus left";
         cmd-right = "focus right";
