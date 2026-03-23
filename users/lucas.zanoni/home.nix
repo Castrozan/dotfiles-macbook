@@ -42,6 +42,9 @@
     ../../home/modules/terminal/bad-apple.nix
     ../../home/modules/terminal/cmatrix.nix
 
+    ../../home/modules/media/obsidian.nix
+    ../../home/modules/media/scripts.nix
+
     "${inputs.private-config}/sb-toolkit"
   ];
 }

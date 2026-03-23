@@ -106,6 +106,7 @@
       "alt-tab"
       "brave-browser"
       "docker"
+      "obsidian"
     ];
   };
 
