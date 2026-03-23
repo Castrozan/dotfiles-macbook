@@ -3,10 +3,16 @@ function __start_tmux
     return
   end
 
-  # Check if sessions already exist to avoid recreating
+  if test -n "$TMUX"
+    return
+  end
+
+  if string match -q "*cursor*" (ps -o comm= -p $fish_pid)
+    return
+  end
+
   if not tmux has-session -t screensaver 2>/dev/null
     if type -q bash
-      # Use bash directly in background to prevent blocking
       bash -c '
         source ~/.dotfiles/home/modules/terminal/shell/screensaver.sh 2>/dev/null || true
         source ~/.dotfiles/home/modules/terminal/shell/tmux_main.sh 2>/dev/null || true
@@ -16,9 +22,7 @@ function __start_tmux
     end
   end
 
-  if [ -z "$TMUX" ] && ! string match -q "*cursor*" (ps -o comm= -p $fish_pid)
-    tmux attach -t screensaver 2>/dev/null
-  end
+  tmux attach -t screensaver 2>/dev/null
 end
 
 # Wrapper function for bass-translated bash alias compatibility
