@@ -445,11 +445,11 @@
     "private-config": {
       "flake": false,
       "locked": {
-        "lastModified": 1774027126,
-        "narHash": "sha256-0tPSPd+nNDHQxHjgGherTDdU7+sA3sNwUnWcY8hGuQQ=",
+        "lastModified": 1774228123,
+        "narHash": "sha256-vP5fg0q3qjmoyYnldoABFccP/Vo7ei/zMO5TYAh7/N0=",
         "ref": "refs/heads/master",
-        "rev": "3f4831aaa168fe5b61cd1e9bb442ccb9857fc68d",
-        "revCount": 2,
+        "rev": "512cba054b6cec8795c287245f170e334d0c2fd1",
+        "revCount": 3,
         "type": "git",
         "url": "ssh://git@github.com/Castrozan/private-config"
       },
