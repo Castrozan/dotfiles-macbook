@@ -12,6 +12,8 @@
     devenv.url = "github:cachix/devenv/v1.11.2";
     lazygit.url = "github:Castrozan/lazygit";
     cmatrix.url = "github:castrozan/cmatrix";
+    agenix.url = "github:ryantm/agenix";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
     private-config = {
       url = "git+ssh://git@github.com/Castrozan/private-config";
       flake = false;

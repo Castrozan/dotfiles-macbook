@@ -42,6 +42,8 @@
     ../../home/modules/terminal/bad-apple.nix
     ../../home/modules/terminal/cmatrix.nix
 
+    ../../home/modules/security/agenix.nix
+
     ../../home/modules/media/obsidian
 
     "${inputs.private-config}/sb-toolkit"

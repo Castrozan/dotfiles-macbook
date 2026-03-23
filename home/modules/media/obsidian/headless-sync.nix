@@ -9,6 +9,9 @@ let
   obsidianHeadlessVersion = "0.0.5";
   npmPrefixDirectory = "${config.home.homeDirectory}/.local/share/obsidian-headless-npm";
   vaultPath = "${config.home.homeDirectory}/vault";
+  secretsDirectory = "${config.home.homeDirectory}/.secrets";
+  obsidianHeadlessConfigDirectory = "${config.home.homeDirectory}/.obsidian-headless";
+  obsidianHeadlessVaultId = "2b6bae3226c07323c77d47ea9cc25a42";
 
   nodeGypBuildDependencies = lib.concatStringsSep ":" [
     "${nodejs}/bin"
@@ -32,6 +35,24 @@ let
     ${nodejs}/bin/npm install -g "obsidian-headless@${obsidianHeadlessVersion}" \
       --prefix "${npmPrefixDirectory}" \
       --registry "https://registry.npmjs.org/"
+  '';
+
+  placeObsidianHeadlessSecrets = pkgs.writeShellScript "obsidian-headless-place-secrets" ''
+    set -euo pipefail
+
+    AUTH_TOKEN_SECRET="${secretsDirectory}/obsidian-headless-auth-token"
+    SYNC_CONFIG_SECRET="${secretsDirectory}/obsidian-headless-sync-config"
+    SYNC_CONFIG_DIRECTORY="${obsidianHeadlessConfigDirectory}/sync/${obsidianHeadlessVaultId}"
+
+    mkdir -p "${obsidianHeadlessConfigDirectory}"
+    mkdir -p "$SYNC_CONFIG_DIRECTORY"
+
+    cp "$AUTH_TOKEN_SECRET" "${obsidianHeadlessConfigDirectory}/auth_token"
+    chmod 600 "${obsidianHeadlessConfigDirectory}/auth_token"
+
+    cp "$SYNC_CONFIG_SECRET" "$SYNC_CONFIG_DIRECTORY/config.json"
+    ${pkgs.gnused}/bin/sed -i 's|"vaultPath": "[^"]*"|"vaultPath": "${vaultPath}"|' "$SYNC_CONFIG_DIRECTORY/config.json"
+    chmod 600 "$SYNC_CONFIG_DIRECTORY/config.json"
   '';
 
   obsidianHeadlessWrapper = pkgs.writeShellScriptBin "ob" ''
@@ -62,6 +83,16 @@ in
     activation.installObsidianHeadlessViaNpm = config.lib.dag.entryAfter [ "writeBoundary" ] ''
       run ${installObsidianHeadlessViaNpm}
     '';
+
+    activation.placeObsidianHeadlessSecrets =
+      config.lib.dag.entryAfter
+        [
+          "writeBoundary"
+          "agenix"
+        ]
+        ''
+          run ${placeObsidianHeadlessSecrets}
+        '';
   };
 
   launchd.agents.obsidian-headless-sync = {
