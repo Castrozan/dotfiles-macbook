@@ -4,15 +4,13 @@ import json
 import os
 import socket
 import subprocess
-import sys
 import threading
 import warnings
 
 warnings.filterwarnings("ignore", message="PyObjCPointer created")
 
 import AppKit
-import objc
-from Foundation import NSMakeRect, NSMakePoint, NSMakeSize
+from Foundation import NSMakeRect, NSMakePoint
 from PyObjCTools import AppHelper
 
 SOCKET_PATH = "/tmp/workspace-switcher.sock"
@@ -519,29 +517,6 @@ class CommandSocketServer:
             AppHelper.callAfter(handler)
 
 
-class ModifierKeyReleaseMonitor:
-    def __init__(self, switcher_state):
-        self._switcher_state = switcher_state
-        self._event_monitor = None
-
-    def start_monitoring(self):
-        self._event_monitor = (
-            AppKit.NSEvent.addGlobalMonitorForEventsMatchingMask_handler_(
-                AppKit.NSEventMaskFlagsChanged,
-                self._on_modifier_flags_changed,
-            )
-        )
-
-    def _on_modifier_flags_changed(self, event):
-        if not self._switcher_state.is_active:
-            return
-        command_key_still_held = (
-            event.modifierFlags() & AppKit.NSEventModifierFlagCommand
-        )
-        if not command_key_still_held:
-            AppHelper.callAfter(self._switcher_state.handle_commit_command)
-
-
 def remove_stale_active_flag_on_startup():
     try:
         os.unlink(ACTIVE_FLAG_PATH)
@@ -563,9 +538,6 @@ def main():
 
     command_server = CommandSocketServer(switcher_state)
     command_server.start_accepting_connections()
-
-    modifier_monitor = ModifierKeyReleaseMonitor(switcher_state)
-    modifier_monitor.start_monitoring()
 
     AppHelper.runEventLoop()
 

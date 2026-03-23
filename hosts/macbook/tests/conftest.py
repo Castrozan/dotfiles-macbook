@@ -17,7 +17,6 @@ mock_pyobjctools = MagicMock()
 mock_pyobjctools.AppHelper = mock_apphelper
 
 sys.modules["AppKit"] = mock_appkit
-sys.modules["objc"] = MagicMock()
 sys.modules["Foundation"] = MagicMock()
 sys.modules["PyObjCTools"] = mock_pyobjctools
 sys.modules["PyObjCTools.AppHelper"] = mock_apphelper
