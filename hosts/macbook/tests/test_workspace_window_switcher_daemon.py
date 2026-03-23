@@ -22,7 +22,9 @@ class TestStateMachineActivation:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         assert state.is_active
@@ -35,7 +37,11 @@ class TestStateMachineActivation:
             {"window-id": 1001, "app-name": "WezTerm", "window-title": "term"}
         ]
         mock_aerospace_provider.get_focused_window_id.return_value = 1001
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state.handle_next_command()
         assert not state.is_active
         mock_overlay.show_with_windows_and_selection.assert_not_called()
@@ -44,7 +50,11 @@ class TestStateMachineActivation:
         self, mock_aerospace_provider, mock_overlay
     ):
         mock_aerospace_provider.get_focused_workspace_windows.return_value = []
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state.handle_next_command()
         assert not state.is_active
         mock_overlay.show_with_windows_and_selection.assert_not_called()
@@ -55,7 +65,9 @@ class TestStateMachineWindowOrdering:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         assert state._windows[0]["window-id"] == 1001
@@ -64,7 +76,9 @@ class TestStateMachineWindowOrdering:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         non_focused_ids = [w["window-id"] for w in state._windows[1:]]
@@ -76,7 +90,9 @@ class TestStateMachineInitialSelection:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         assert state._selected_index == 1
@@ -85,7 +101,9 @@ class TestStateMachineInitialSelection:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_prev_command()
         assert state._selected_index == 3
@@ -96,7 +114,9 @@ class TestStateMachineSelectionCycling:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_next_command()
@@ -107,7 +127,9 @@ class TestStateMachineSelectionCycling:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_next_command()
@@ -116,7 +138,9 @@ class TestStateMachineSelectionCycling:
 
     def test_next_wraps_past_end(self, aerospace_provider_with_windows, mock_overlay):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         for _ in range(3):
@@ -125,7 +149,9 @@ class TestStateMachineSelectionCycling:
 
     def test_prev_wraps_past_start(self, aerospace_provider_with_windows, mock_overlay):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_prev_command()
@@ -139,7 +165,9 @@ class TestStateMachineCommit:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_commit_command()
@@ -149,7 +177,9 @@ class TestStateMachineCommit:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_next_command()
@@ -159,7 +189,9 @@ class TestStateMachineCommit:
 
     def test_commit_hides_overlay(self, aerospace_provider_with_windows, mock_overlay):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_commit_command()
@@ -169,7 +201,9 @@ class TestStateMachineCommit:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_commit_command()
@@ -179,7 +213,9 @@ class TestStateMachineCommit:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_commit_command()
@@ -189,7 +225,11 @@ class TestStateMachineCommit:
     def test_commit_when_not_active_is_ignored(
         self, mock_aerospace_provider, mock_overlay
     ):
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state.handle_commit_command()
         mock_aerospace_provider.focus_window.assert_not_called()
         mock_overlay.hide.assert_not_called()
@@ -198,7 +238,9 @@ class TestStateMachineCommit:
 class TestStateMachineCancel:
     def test_cancel_hides_overlay(self, aerospace_provider_with_windows, mock_overlay):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_cancel_command()
@@ -208,7 +250,9 @@ class TestStateMachineCancel:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_cancel_command()
@@ -218,7 +262,9 @@ class TestStateMachineCancel:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_cancel_command()
@@ -227,7 +273,11 @@ class TestStateMachineCancel:
     def test_cancel_when_not_active_is_ignored(
         self, mock_aerospace_provider, mock_overlay
     ):
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state.handle_cancel_command()
         mock_overlay.hide.assert_not_called()
 
@@ -241,7 +291,11 @@ class TestStateMachineCommitBeforeReady:
         )
         mock_aerospace_provider.get_focused_window_id.return_value = 1001
 
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
 
         state._active = True
         state._create_active_flag_file()
@@ -267,7 +321,11 @@ class TestStateMachineDirectionAccumulation:
         )
         mock_aerospace_provider.get_focused_window_id.return_value = 1001
 
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state._active = True
         state._create_active_flag_file()
         state._fetching_windows = True
@@ -287,7 +345,11 @@ class TestStateMachineDirectionAccumulation:
         )
         mock_aerospace_provider.get_focused_window_id.return_value = 1001
 
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state._active = True
         state._create_active_flag_file()
         state._fetching_windows = True
@@ -306,7 +368,11 @@ class TestStateMachineDirectionAccumulation:
         )
         mock_aerospace_provider.get_focused_window_id.return_value = 1001
 
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state._active = True
         state._create_active_flag_file()
         state._fetching_windows = True
@@ -324,7 +390,9 @@ class TestStateMachineFlagFile:
         self, aerospace_provider_with_windows, mock_overlay, temporary_active_flag_path
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         assert os.path.exists(temporary_active_flag_path)
@@ -333,7 +401,9 @@ class TestStateMachineFlagFile:
         self, aerospace_provider_with_windows, mock_overlay, temporary_active_flag_path
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_commit_command()
@@ -343,7 +413,9 @@ class TestStateMachineFlagFile:
         self, aerospace_provider_with_windows, mock_overlay, temporary_active_flag_path
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_cancel_command()
@@ -354,7 +426,11 @@ class TestStateMachineFlagFile:
     ):
         mock_aerospace_provider.get_focused_workspace_windows.return_value = []
         mock_aerospace_provider.get_focused_window_id.return_value = None
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state.handle_next_command()
         assert not os.path.exists(temporary_active_flag_path)
 
@@ -364,7 +440,9 @@ class TestStateMachineReactivation:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_commit_command()
@@ -378,7 +456,9 @@ class TestStateMachineReactivation:
         self, aerospace_provider_with_windows, mock_overlay
     ):
         state = daemon.WindowSwitcherStateMachine(
-            aerospace_provider_with_windows, mock_overlay
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
         state.handle_cancel_command()
@@ -396,7 +476,11 @@ class TestStateMachineWithTwoWindows:
             {"window-id": 2, "app-name": "B", "window-title": "b"},
         ]
         mock_aerospace_provider.get_focused_window_id.return_value = 1
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state.handle_next_command()
         state.handle_commit_command()
         mock_aerospace_provider.focus_window.assert_called_with(2)
@@ -639,7 +723,11 @@ class TestStateMachineCancelDuringFetch:
         )
         mock_aerospace_provider.get_focused_window_id.return_value = 1001
 
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state._active = True
         state._create_active_flag_file()
         state._fetching_windows = True
@@ -654,7 +742,11 @@ class TestStateMachineAdvanceOnEmptyWindows:
     def test_advance_does_nothing_with_empty_window_list(
         self, mock_aerospace_provider, mock_overlay
     ):
-        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
         state._advance_selection_by(1)
         assert state._selected_index == 0
         mock_overlay.update_selected_index.assert_not_called()
@@ -672,36 +764,162 @@ class TestRemoveStaleActiveFlagOnStartup:
         daemon.remove_stale_active_flag_on_startup()
 
 
+class TestMostRecentlyUsedWindowTracker:
+    def test_record_moves_window_to_front(self):
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(100)
+        tracker.record_focused_window(200)
+        tracker.record_focused_window(300)
+        assert tracker._window_ids_by_recency == [300, 200, 100]
+
+    def test_record_deduplicates_window_id(self):
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(100)
+        tracker.record_focused_window(200)
+        tracker.record_focused_window(100)
+        assert tracker._window_ids_by_recency == [100, 200]
+
+    def test_sort_windows_by_recency(self):
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(3)
+        tracker.record_focused_window(1)
+        tracker.record_focused_window(2)
+        windows = [
+            {"window-id": 1, "app-name": "A"},
+            {"window-id": 2, "app-name": "B"},
+            {"window-id": 3, "app-name": "C"},
+        ]
+        sorted_windows = tracker.sort_windows_by_recency(windows)
+        assert [w["window-id"] for w in sorted_windows] == [2, 1, 3]
+
+    def test_unknown_windows_sort_after_known(self):
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(2)
+        windows = [
+            {"window-id": 1, "app-name": "A"},
+            {"window-id": 2, "app-name": "B"},
+            {"window-id": 3, "app-name": "C"},
+        ]
+        sorted_windows = tracker.sort_windows_by_recency(windows)
+        assert sorted_windows[0]["window-id"] == 2
+        assert {w["window-id"] for w in sorted_windows[1:]} == {1, 3}
+
+    def test_remove_stale_window_ids(self):
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(1)
+        tracker.record_focused_window(2)
+        tracker.record_focused_window(3)
+        tracker.remove_stale_window_ids({2, 3})
+        assert tracker._window_ids_by_recency == [3, 2]
+
+    def test_empty_tracker_preserves_original_order(self):
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        windows = [
+            {"window-id": 1, "app-name": "A"},
+            {"window-id": 2, "app-name": "B"},
+        ]
+        sorted_windows = tracker.sort_windows_by_recency(windows)
+        assert [w["window-id"] for w in sorted_windows] == [1, 2]
+
+
+class TestMruWindowOrderingIntegration:
+    def test_mru_order_determines_window_list(
+        self, mock_aerospace_provider, mock_overlay, sample_workspace_windows
+    ):
+        mock_aerospace_provider.get_focused_workspace_windows.return_value = (
+            sample_workspace_windows
+        )
+        mock_aerospace_provider.get_focused_window_id.return_value = 1001
+
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(1004)
+        tracker.record_focused_window(1002)
+        tracker.record_focused_window(1003)
+
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider, mock_overlay, tracker
+        )
+        state.handle_next_command()
+
+        window_ids = [w["window-id"] for w in state._windows]
+        assert window_ids[0] == 1001
+        assert window_ids[1] == 1003
+        assert window_ids[2] == 1002
+        assert window_ids[3] == 1004
+
+    def test_first_tab_selects_previous_window_via_mru(
+        self, mock_aerospace_provider, mock_overlay
+    ):
+        windows = [
+            {"window-id": 10, "app-name": "A", "window-title": "a"},
+            {"window-id": 20, "app-name": "B", "window-title": "b"},
+            {"window-id": 30, "app-name": "C", "window-title": "c"},
+        ]
+        mock_aerospace_provider.get_focused_workspace_windows.return_value = windows
+        mock_aerospace_provider.get_focused_window_id.return_value = 10
+
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        tracker.record_focused_window(20)
+        tracker.record_focused_window(30)
+
+        state = daemon.WindowSwitcherStateMachine(
+            mock_aerospace_provider, mock_overlay, tracker
+        )
+        state.handle_next_command()
+        state.handle_commit_command()
+
+        mock_aerospace_provider.focus_window.assert_called_with(30)
+
+
 class TestCommandSocketServerDispatch:
     def test_dispatches_next_to_handler(self):
         mock_state = MagicMock()
-        server = daemon.CommandSocketServer(mock_state)
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
         server._dispatch_command_to_main_thread("next")
         mock_state.handle_next_command.assert_called_once()
 
     def test_dispatches_prev_to_handler(self):
         mock_state = MagicMock()
-        server = daemon.CommandSocketServer(mock_state)
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
         server._dispatch_command_to_main_thread("prev")
         mock_state.handle_prev_command.assert_called_once()
 
     def test_dispatches_commit_to_handler(self):
         mock_state = MagicMock()
-        server = daemon.CommandSocketServer(mock_state)
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
         server._dispatch_command_to_main_thread("commit")
         mock_state.handle_commit_command.assert_called_once()
 
     def test_dispatches_cancel_to_handler(self):
         mock_state = MagicMock()
-        server = daemon.CommandSocketServer(mock_state)
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
         server._dispatch_command_to_main_thread("cancel")
         mock_state.handle_cancel_command.assert_called_once()
 
     def test_ignores_unknown_commands(self):
         mock_state = MagicMock()
-        server = daemon.CommandSocketServer(mock_state)
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
         server._dispatch_command_to_main_thread("unknown_garbage")
         mock_state.handle_next_command.assert_not_called()
         mock_state.handle_prev_command.assert_not_called()
         mock_state.handle_commit_command.assert_not_called()
         mock_state.handle_cancel_command.assert_not_called()
+
+    def test_focus_command_records_window_in_mru_tracker(self):
+        mock_state = MagicMock()
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
+        server._dispatch_command_to_main_thread("focus:12345")
+        assert tracker._window_ids_by_recency == [12345]
+
+    def test_focus_command_ignores_invalid_window_id(self):
+        mock_state = MagicMock()
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
+        server._dispatch_command_to_main_thread("focus:notanumber")
+        assert tracker._window_ids_by_recency == []

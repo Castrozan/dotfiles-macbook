@@ -315,10 +315,41 @@ class SwitcherOverlayPanel:
         self._panel.setFrameOrigin_(NSMakePoint(centered_x, centered_y))
 
 
+class MostRecentlyUsedWindowTracker:
+    def __init__(self):
+        self._window_ids_by_recency = []
+
+    def record_focused_window(self, window_id):
+        if window_id in self._window_ids_by_recency:
+            self._window_ids_by_recency.remove(window_id)
+        self._window_ids_by_recency.insert(0, window_id)
+
+    def sort_windows_by_recency(self, windows):
+        window_id_to_position = {
+            window_id: position
+            for position, window_id in enumerate(self._window_ids_by_recency)
+        }
+        unknown_position = len(self._window_ids_by_recency)
+        return sorted(
+            windows,
+            key=lambda window: window_id_to_position.get(
+                window["window-id"], unknown_position
+            ),
+        )
+
+    def remove_stale_window_ids(self, current_window_ids):
+        self._window_ids_by_recency = [
+            window_id
+            for window_id in self._window_ids_by_recency
+            if window_id in current_window_ids
+        ]
+
+
 class WindowSwitcherStateMachine:
-    def __init__(self, aerospace_provider, overlay_panel):
+    def __init__(self, aerospace_provider, overlay_panel, mru_tracker):
         self._aerospace = aerospace_provider
         self._overlay = overlay_panel
+        self._mru_tracker = mru_tracker
         self._windows = []
         self._selected_index = 0
         self._active = False
@@ -402,13 +433,10 @@ class WindowSwitcherStateMachine:
             self._deactivate()
             return
 
-        focused_windows = [
-            w for w in windows if w["window-id"] == focused_window_id
-        ]
-        non_focused_windows = [
-            w for w in windows if w["window-id"] != focused_window_id
-        ]
-        self._windows = focused_windows + non_focused_windows
+        current_window_ids = {w["window-id"] for w in windows}
+        self._mru_tracker.remove_stale_window_ids(current_window_ids)
+        self._mru_tracker.record_focused_window(focused_window_id)
+        self._windows = self._mru_tracker.sort_windows_by_recency(windows)
 
         total_direction = self._pending_direction_changes
         if total_direction > 0:
@@ -467,8 +495,9 @@ class WindowSwitcherStateMachine:
 
 
 class CommandSocketServer:
-    def __init__(self, switcher_state):
+    def __init__(self, switcher_state, mru_tracker):
         self._switcher_state = switcher_state
+        self._mru_tracker = mru_tracker
 
     def start_accepting_connections(self):
         server_thread = threading.Thread(
@@ -497,6 +526,15 @@ class CommandSocketServer:
                 pass
 
     def _dispatch_command_to_main_thread(self, command):
+        if command.startswith("focus:"):
+            window_id_string = command[6:]
+            try:
+                window_id = int(window_id_string)
+                self._mru_tracker.record_focused_window(window_id)
+            except ValueError:
+                pass
+            return
+
         command_to_handler = {
             "next": self._switcher_state.handle_next_command,
             "prev": self._switcher_state.handle_prev_command,
@@ -525,9 +563,12 @@ def main():
 
     aerospace_provider = AeroSpaceWindowProvider()
     overlay_panel = SwitcherOverlayPanel()
-    switcher_state = WindowSwitcherStateMachine(aerospace_provider, overlay_panel)
+    mru_tracker = MostRecentlyUsedWindowTracker()
+    switcher_state = WindowSwitcherStateMachine(
+        aerospace_provider, overlay_panel, mru_tracker
+    )
 
-    command_server = CommandSocketServer(switcher_state)
+    command_server = CommandSocketServer(switcher_state, mru_tracker)
     command_server.start_accepting_connections()
 
     AppHelper.runEventLoop()

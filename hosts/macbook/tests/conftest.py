@@ -93,9 +93,15 @@ def sample_workspace_windows():
 
 
 @pytest.fixture
-def switcher_state(mock_aerospace_provider, mock_overlay):
+def mock_mru_tracker():
+    tracker = daemon_module.MostRecentlyUsedWindowTracker()
+    return tracker
+
+
+@pytest.fixture
+def switcher_state(mock_aerospace_provider, mock_overlay, mock_mru_tracker):
     return daemon_module.WindowSwitcherStateMachine(
-        mock_aerospace_provider, mock_overlay
+        mock_aerospace_provider, mock_overlay, mock_mru_tracker
     )
 
 
