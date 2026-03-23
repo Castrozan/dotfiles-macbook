@@ -14,6 +14,8 @@
     cmatrix.url = "github:castrozan/cmatrix";
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
+    stylix.url = "github:danth/stylix/release-25.11";
+    stylix.inputs.nixpkgs.follows = "nixpkgs";
     private-config = {
       url = "git+ssh://git@github.com/Castrozan/private-config";
       flake = false;

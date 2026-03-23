@@ -14,6 +14,7 @@
     useUserPackages = true;
     backupFileExtension = "backup";
     overwriteBackup = true;
+    sharedModules = [ inputs.stylix.homeModules.stylix ];
 
     extraSpecialArgs = {
       inherit

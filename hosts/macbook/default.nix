@@ -81,11 +81,6 @@
     };
   };
 
-  system.activationScripts.postActivation.text = ''
-    osascript -e 'tell application "System Events" to tell every desktop to set picture to "/Users/${username}/.dotfiles/static/alter-jellyfish-dark.jpg"' || true
-
-  '';
-
   launchd.user.agents.quit-finder-on-login = {
     serviceConfig = {
       Label = "com.dotfiles.quit-finder-on-login";

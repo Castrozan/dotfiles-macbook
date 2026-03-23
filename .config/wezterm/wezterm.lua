@@ -1,35 +1,5 @@
 local wezterm = require 'wezterm'
 
-local catppuccin_mocha = {
-  foreground = '#CDD6F4',
-  background = '#0F0D0E',
-  cursor_bg = '#F5E0DC',
-  cursor_fg = '#1E1E2E',
-  selection_bg = '#F5E0DC',
-  selection_fg = '#1E1E2E',
-
-  ansi = {
-    '#9399B2',
-    '#F38BA8',
-    '#A6E3A1',
-    '#F9E2AF',
-    '#89B4FA',
-    '#F5C2E7',
-    '#94E2D5',
-    '#BAC2DE',
-  },
-  brights = {
-    '#A6ADC8',
-    '#F38BA8',
-    '#A6E3A1',
-    '#F9E2AF',
-    '#89B4FA',
-    '#F5C2E7',
-    '#94E2D5',
-    '#A6ADC8',
-  },
-}
-
 local mux = wezterm.mux
 wezterm.on('gui-startup', function(cmd)
   local tab, pane, window = mux.spawn_window(cmd or {})
@@ -49,11 +19,6 @@ return {
     'Noto Color Emoji',
   }),
   font_size = wezterm.target_triple:find('darwin') and 18 or 16,
-
-  color_schemes = {
-    ['Catppuccin Mocha'] = catppuccin_mocha,
-  },
-  color_scheme = 'Catppuccin Mocha',
 
   window_padding = {
     left = 10,

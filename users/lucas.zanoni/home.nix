@@ -29,6 +29,7 @@
     ../../home/modules/editor/neovim.nix
     ../../home/modules/editor/vscode/vscode.nix
 
+    ../../home/modules/desktop/theming.nix
     ../../home/modules/desktop/aerospace.nix
     ../../home/modules/desktop/application-launcher
     ../../home/modules/desktop/fonts.nix
