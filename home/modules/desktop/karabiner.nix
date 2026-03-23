@@ -212,7 +212,7 @@ let
                 ];
           }
           {
-            description = "Ctrl+Right to raw escape sequence in terminals (bypasses macOS menu interception)";
+            description = "Ctrl+Right to Option+Right in terminals (bypasses macOS WezTerm menu interception)";
             manipulators = [
               {
                 type = "basic";
@@ -224,14 +224,9 @@ let
                   };
                 };
                 to = [
-                  { key_code = "escape"; }
-                  { key_code = "open_bracket"; }
-                  { key_code = "1"; }
-                  { key_code = "semicolon"; }
-                  { key_code = "5"; }
                   {
-                    key_code = "c";
-                    modifiers = [ "shift" ];
+                    key_code = "right_arrow";
+                    modifiers = [ "option" ];
                   }
                 ];
                 conditions = onlyTerminalsCondition;
