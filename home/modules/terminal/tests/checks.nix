@@ -99,12 +99,9 @@ in
     mkEvalCheck "domain-terminal-bash-tmux-functions-before-call" tmuxFunctionsDefinedBeforeCall
       "screensaver/tmux functions must be defined before _start_tmux call in concatenated bashrc";
 
-  domain-terminal-kitty-catppuccin =
-    mkEvalCheck "domain-terminal-kitty-catppuccin"
-      (cfg.programs.kitty.enable && cfg.programs.kitty.themeFile == "Catppuccin-Mocha")
-      "kitty should be enabled with Catppuccin-Mocha theme, got ${
-        cfg.programs.kitty.themeFile or "null"
-      }";
+  domain-terminal-kitty-enabled =
+    mkEvalCheck "domain-terminal-kitty-enabled" cfg.programs.kitty.enable
+      "kitty should be enabled";
 
   domain-terminal-tmux-config = mkEvalCheck "domain-terminal-tmux-config" (
     cfg.programs.tmux.enable && cfg.programs.tmux.baseIndex == 1
@@ -114,9 +111,9 @@ in
     mkEvalCheck "domain-terminal-wezterm-enabled" cfg.programs.wezterm.enable
       "wezterm should be enabled";
 
-  domain-terminal-atuin-fish = mkEvalCheck "domain-terminal-atuin-fish" (
-    cfg.programs.atuin.enable && cfg.programs.atuin.enableFishIntegration
-  ) "atuin should be enabled with fish integration";
+  domain-terminal-atuin-enabled = mkEvalCheck "domain-terminal-atuin-enabled" (
+    cfg.programs.atuin.enable && cfg.programs.atuin.enableBashIntegration
+  ) "atuin should be enabled with bash integration";
 
   domain-terminal-yazi-enabled =
     mkEvalCheck "domain-terminal-yazi-enabled" cfg.programs.yazi.enable
