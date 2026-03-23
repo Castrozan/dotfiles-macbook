@@ -93,7 +93,7 @@ return {
     { key = 'Enter', mods = 'CTRL', action = wezterm.action.SendString('\x1b[13;5u') },
     { key = 'Enter', mods = 'ALT', action = wezterm.action.SendString('\x1b[13;3u') },
     { key = 'Space', mods = 'CTRL', action = wezterm.action.SendString('\x00') },
-    { key = 'F20', mods = 'NONE', action = wezterm.action.SendString('\x1b[1;5C') },
+    { key = 'F3', mods = 'ALT', action = wezterm.action.SendString('\x1b[1;5C') },
     { key = 's', mods = 'CTRL|SHIFT', action = wezterm.action.SendString(os.getenv('HOME') .. '/.dotfiles/bin/tmux-session-chooser\n') },
     { key = 'UpArrow', mods = 'CTRL|SHIFT', action = wezterm.action.SendString('\x1b[1;6A') },
     { key = 'DownArrow', mods = 'CTRL|SHIFT', action = wezterm.action.SendString('\x1b[1;6B') },

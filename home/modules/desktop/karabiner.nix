@@ -213,7 +213,7 @@ let
                 ];
           }
           {
-            description = "Ctrl+Right to F20 in terminals (bypasses macOS menu interception)";
+            description = "Ctrl+Right to Option+F3 in terminals (bypasses macOS menu interception)";
             manipulators = [
               {
                 type = "basic";
@@ -226,7 +226,8 @@ let
                 };
                 to = [
                   {
-                    key_code = "f20";
+                    key_code = "f3";
+                    modifiers = [ "option" ];
                   }
                 ];
                 conditions = onlyTerminalsCondition;
