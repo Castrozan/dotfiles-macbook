@@ -15,6 +15,9 @@
 
       key-mapping.preset = "qwerty";
 
+      on-focus-changed = [
+        ''exec-and-forget echo "focus:$AEROSPACE_WINDOW_ID" | /usr/bin/nc -U /tmp/workspace-switcher.sock''
+      ];
       on-focused-monitor-changed = [ "move-mouse monitor-lazy-center" ];
 
       workspace-to-monitor-force-assignment = {
