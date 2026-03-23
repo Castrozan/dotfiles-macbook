@@ -1,7 +1,9 @@
 import importlib.machinery
 import importlib.util
 import os
+import socket
 import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -43,7 +45,10 @@ class ImmediateThread:
 
 
 @pytest.fixture(autouse=True)
-def synchronous_threads():
+def synchronous_threads(request):
+    if "real_threads" in (m.name for m in request.node.iter_markers()):
+        yield
+        return
     with patch.object(daemon_module.threading, "Thread", ImmediateThread):
         yield
 
@@ -101,3 +106,19 @@ def aerospace_provider_with_windows(mock_aerospace_provider, sample_workspace_wi
     )
     mock_aerospace_provider.get_focused_window_id.return_value = 1001
     return mock_aerospace_provider
+
+
+@pytest.fixture
+def ipc_test_socket():
+    temporary_directory = tempfile.mkdtemp(dir="/tmp")
+    socket_path = os.path.join(temporary_directory, "test.sock")
+    server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server_socket.bind(socket_path)
+    server_socket.listen(1)
+    yield socket_path, server_socket
+    server_socket.close()
+    try:
+        os.unlink(socket_path)
+    except FileNotFoundError:
+        pass
+    os.rmdir(temporary_directory)

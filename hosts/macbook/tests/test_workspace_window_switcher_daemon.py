@@ -1,6 +1,9 @@
 import json
 import os
+import threading
 from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 import workspace_window_switcher_daemon as daemon
 
@@ -477,6 +480,196 @@ class TestAeroSpaceWindowProviderIpcCommands:
         result = provider._send_ipc_command(["list-windows", "--focused"])
         assert result is None
         assert provider._cached_socket_path is None
+
+
+@pytest.mark.real_threads
+class TestAeroSpaceWindowProviderIpcSocket:
+    def test_sends_json_and_parses_response_over_real_socket(self, ipc_test_socket):
+        socket_path, server_sock = ipc_test_socket
+        provider = daemon.AeroSpaceWindowProvider()
+        provider._cached_socket_path = socket_path
+
+        def handle_one_client():
+            conn, _ = server_sock.accept()
+            request_data = b""
+            while True:
+                chunk = conn.recv(4096)
+                if not chunk:
+                    break
+                request_data += chunk
+            parsed_request = json.loads(request_data)
+            assert parsed_request["args"] == ["list-windows", "--focused", "--json"]
+            response = json.dumps(
+                {
+                    "exitCode": 0,
+                    "stdout": '[{"window-id": 99}]',
+                    "stderr": "",
+                    "serverVersionAndHash": "test",
+                }
+            ).encode()
+            conn.sendall(response)
+            conn.close()
+
+        server_thread = threading.Thread(target=handle_one_client, daemon=True)
+        server_thread.start()
+        result = provider._send_ipc_command(["list-windows", "--focused", "--json"])
+        server_thread.join(timeout=2)
+        assert result == '[{"window-id": 99}]'
+
+    def test_returns_none_on_nonzero_exit_code(self, ipc_test_socket):
+        socket_path, server_sock = ipc_test_socket
+        provider = daemon.AeroSpaceWindowProvider()
+        provider._cached_socket_path = socket_path
+
+        def handle_one_client():
+            conn, _ = server_sock.accept()
+            while conn.recv(4096):
+                pass
+            response = json.dumps(
+                {
+                    "exitCode": 1,
+                    "stdout": "",
+                    "stderr": "error",
+                    "serverVersionAndHash": "test",
+                }
+            ).encode()
+            conn.sendall(response)
+            conn.close()
+
+        server_thread = threading.Thread(target=handle_one_client, daemon=True)
+        server_thread.start()
+        result = provider._send_ipc_command(["bad-command"])
+        server_thread.join(timeout=2)
+        assert result is None
+
+    def test_returns_none_when_socket_path_is_none(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        provider._cached_socket_path = None
+        with patch.object(
+            provider, "_resolve_aerospace_socket_path", return_value=None
+        ):
+            result = provider._send_ipc_command(["list-windows"])
+        assert result is None
+
+    def test_handles_concatenated_json_responses(self, ipc_test_socket):
+        socket_path, server_sock = ipc_test_socket
+        provider = daemon.AeroSpaceWindowProvider()
+        provider._cached_socket_path = socket_path
+
+        def handle_one_client():
+            conn, _ = server_sock.accept()
+            while conn.recv(4096):
+                pass
+            first_response = json.dumps(
+                {
+                    "exitCode": 0,
+                    "stdout": "ok",
+                    "stderr": "",
+                    "serverVersionAndHash": "test",
+                }
+            )
+            second_response = json.dumps(
+                {
+                    "exitCode": 1,
+                    "stdout": "",
+                    "stderr": "Empty request",
+                    "serverVersionAndHash": "test",
+                }
+            )
+            conn.sendall((first_response + second_response).encode())
+            conn.close()
+
+        server_thread = threading.Thread(target=handle_one_client, daemon=True)
+        server_thread.start()
+        result = provider._send_ipc_command(["list-windows"])
+        server_thread.join(timeout=2)
+        assert result == "ok"
+
+
+class TestAeroSpaceWindowProviderSocketFallback:
+    def test_falls_back_to_glob_when_expected_path_missing(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.dict(os.environ, {"USER": "nobody"}):
+            with patch.object(daemon.os.path, "exists", return_value=False):
+                with patch.object(
+                    daemon.glob,
+                    "glob",
+                    return_value=["/tmp/bobko.aerospace-otheruser.sock"],
+                ):
+                    result = provider._resolve_aerospace_socket_path()
+        assert result == "/tmp/bobko.aerospace-otheruser.sock"
+
+    def test_glob_fallback_returns_none_when_no_sockets(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.dict(os.environ, {"USER": "nobody"}):
+            with patch.object(daemon.os.path, "exists", return_value=False):
+                with patch.object(daemon.glob, "glob", return_value=[]):
+                    result = provider._resolve_aerospace_socket_path()
+        assert result is None
+
+
+class TestAeroSpaceWindowProviderMalformedData:
+    def test_returns_empty_list_on_malformed_window_json(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.object(provider, "_send_ipc_command", return_value="not valid json"):
+            result = provider.get_focused_workspace_windows()
+        assert result == []
+
+    def test_returns_none_focused_id_on_malformed_json(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.object(provider, "_send_ipc_command", return_value="broken"):
+            result = provider.get_focused_window_id()
+        assert result is None
+
+    def test_returns_none_focused_id_when_missing_window_id_key(self):
+        provider = daemon.AeroSpaceWindowProvider()
+        with patch.object(
+            provider, "_send_ipc_command", return_value='[{"app-name": "Test"}]'
+        ):
+            result = provider.get_focused_window_id()
+        assert result is None
+
+
+class TestStateMachineCancelDuringFetch:
+    def test_cancel_during_fetch_deactivates(
+        self, mock_aerospace_provider, mock_overlay, sample_workspace_windows
+    ):
+        mock_aerospace_provider.get_focused_workspace_windows.return_value = (
+            sample_workspace_windows
+        )
+        mock_aerospace_provider.get_focused_window_id.return_value = 1001
+
+        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state._active = True
+        state._create_active_flag_file()
+        state._fetching_windows = True
+        state._pending_direction_changes = 1
+
+        state.handle_cancel_command()
+        assert not state.is_active
+        mock_overlay.hide.assert_called_once()
+
+
+class TestStateMachineAdvanceOnEmptyWindows:
+    def test_advance_does_nothing_with_empty_window_list(
+        self, mock_aerospace_provider, mock_overlay
+    ):
+        state = daemon.WindowSwitcherStateMachine(mock_aerospace_provider, mock_overlay)
+        state._advance_selection_by(1)
+        assert state._selected_index == 0
+        mock_overlay.update_selected_index.assert_not_called()
+
+
+class TestRemoveStaleActiveFlagOnStartup:
+    def test_removes_existing_flag_file(self, temporary_active_flag_path):
+        open(temporary_active_flag_path, "w").close()
+        assert os.path.exists(temporary_active_flag_path)
+        daemon.remove_stale_active_flag_on_startup()
+        assert not os.path.exists(temporary_active_flag_path)
+
+    def test_does_not_raise_when_flag_missing(self, temporary_active_flag_path):
+        assert not os.path.exists(temporary_active_flag_path)
+        daemon.remove_stale_active_flag_on_startup()
 
 
 class TestCommandSocketServerDispatch:
