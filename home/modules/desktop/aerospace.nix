@@ -72,6 +72,7 @@
           "workspace 7"
         ];
 
+        cmd-q = "exec-and-forget application-launcher";
         cmd-tab = "exec-and-forget /usr/bin/python3 /Users/${username}/.dotfiles/hosts/macbook/scripts/workspace-window-switcher";
 
         cmd-f = "fullscreen";

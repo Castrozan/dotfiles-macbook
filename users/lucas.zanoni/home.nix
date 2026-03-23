@@ -30,9 +30,12 @@
     ../../home/modules/editor/vscode/vscode.nix
 
     ../../home/modules/desktop/aerospace.nix
+    ../../home/modules/desktop/application-launcher
     ../../home/modules/desktop/fonts.nix
     ../../home/modules/desktop/karabiner.nix
+    ../../home/modules/desktop/maccy.nix
     ../../home/modules/desktop/spaceman.nix
+    ../../home/modules/desktop/vial.nix
 
     ../../home/modules/dev/devenv.nix
     ../../home/modules/dev/git.nix

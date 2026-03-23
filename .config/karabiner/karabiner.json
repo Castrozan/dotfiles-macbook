@@ -634,39 +634,6 @@
               {
                 "type": "basic",
                 "from": {
-                  "key_code": "q",
-                  "modifiers": {
-                    "mandatory": [
-                      "control"
-                    ],
-                    "optional": [
-                      "any"
-                    ]
-                  }
-                },
-                "to": [
-                  {
-                    "key_code": "q",
-                    "modifiers": [
-                      "command"
-                    ]
-                  }
-                ],
-                "conditions": [
-                  {
-                    "type": "frontmost_application_unless",
-                    "bundle_identifiers": [
-                      "^com\\.github\\.wez\\.wezterm$",
-                      "^net\\.kovidgoyal\\.kitty$",
-                      "^com\\.apple\\.Terminal$",
-                      "^com\\.googlecode\\.iterm2$"
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "basic",
-                "from": {
                   "key_code": "r",
                   "modifiers": {
                     "mandatory": [
