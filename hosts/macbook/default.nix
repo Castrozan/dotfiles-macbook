@@ -100,6 +100,7 @@
       "alt-tab"
       "brave-browser"
       "docker"
+      "karabiner-elements"
       "obsidian"
     ];
   };
