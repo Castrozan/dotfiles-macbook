@@ -1,4 +1,5 @@
-_: {
+{ lib, ... }:
+{
   programs.yazi = {
     enable = true;
 
@@ -321,7 +322,7 @@ _: {
       ];
     };
 
-    theme = {
+    theme = lib.mkForce {
       mgr = {
         cwd = {
           fg = "#94e2d5";
