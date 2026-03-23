@@ -21,12 +21,6 @@
     stateVersion = 6;
     keyboard = {
       enableKeyMapping = true;
-      userKeyMapping = [
-        {
-          HIDKeyboardModifierMappingSrc = 30064771121;
-          HIDKeyboardModifierMappingDst = 30064771124;
-        }
-      ];
     };
     defaults = {
       ".GlobalPreferences"."com.apple.mouse.scaling" = 3.99;
