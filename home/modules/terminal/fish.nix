@@ -2,6 +2,20 @@
 let
   shellInit = builtins.readFile ./shell/fish/config.fish;
 
+  carapaceInitFish = pkgs.runCommand "carapace-init-fish" { } ''
+    export HOME=$TMPDIR
+    ${pkgs.carapace}/bin/carapace _carapace fish > $out
+  '';
+
+  atuinInitFish = pkgs.runCommand "atuin-init-fish" { } ''
+    export HOME=$TMPDIR
+    ${pkgs.atuin}/bin/atuin init fish --disable-up-arrow > $out
+  '';
+
+  zoxideInitFish = pkgs.runCommand "zoxide-init-fish" { } ''
+    ${pkgs.zoxide}/bin/zoxide init fish > $out
+  '';
+
   bashAliasesFileContent = builtins.readFile ./shell/aliases.sh;
 
   allBashSourceLines = lib.splitString "\n" bashAliasesFileContent;
@@ -91,12 +105,12 @@ in
 
     zoxide = {
       enable = true;
-      enableFishIntegration = true;
+      enableFishIntegration = false;
     };
 
     carapace = {
       enable = true;
-      enableFishIntegration = true;
+      enableFishIntegration = false;
     };
   };
 
@@ -108,6 +122,9 @@ in
     "fish/conf.d/default-directories.fish".source = ./shell/fish/conf.d/default_directories.fish;
     "fish/conf.d/key-bindings.fish".source = ./shell/fish/conf.d/key_bindings.fish;
     "fish/conf.d/private-aliases.fish".source = ./shell/fish/conf.d/private_aliases.fish;
+    "fish/conf.d/carapace.fish".source = carapaceInitFish;
+    "fish/conf.d/atuin.fish".source = atuinInitFish;
+    "fish/conf.d/zoxide.fish".source = zoxideInitFish;
 
     "fish/functions/fish_prompt.fish".source = ./shell/fish/functions/fish_prompt.fish;
     "fish/functions/cursor.fish".source = ./shell/fish/functions/cursor.fish;

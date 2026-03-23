@@ -3,7 +3,7 @@
   programs.atuin = {
     enable = true;
     package = pkgs.atuin;
-    enableFishIntegration = true;
+    enableFishIntegration = false;
     enableBashIntegration = true;
     flags = [ "--disable-up-arrow" ];
     settings = {
