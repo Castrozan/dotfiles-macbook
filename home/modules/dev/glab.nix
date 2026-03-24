@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   yamlFormat = pkgs.formats.yaml { };
 
@@ -19,10 +19,22 @@ let
       };
     };
   };
+
+  glabConfigSource = yamlFormat.generate "glab-config.yml" glabConfiguration;
+
+  glabConfigDestination = "${config.xdg.configHome}/glab-cli/config.yml";
+
+  deployGlabConfigScript = pkgs.writeShellScript "deploy-glab-config" ''
+    set -euo pipefail
+    mkdir -p "$(dirname "${glabConfigDestination}")"
+    cp -f "${glabConfigSource}" "${glabConfigDestination}"
+    chmod 600 "${glabConfigDestination}"
+  '';
 in
 {
   home.packages = [ pkgs.glab ];
 
-  xdg.configFile."glab-cli/config.yml".source =
-    yamlFormat.generate "glab-config.yml" glabConfiguration;
+  home.activation.deployGlabConfig = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    run ${deployGlabConfigScript}
+  '';
 }
