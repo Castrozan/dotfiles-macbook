@@ -39,39 +39,6 @@ let
     }
   ];
 
-  makeCorneDeadKeyToRegularManipulators = key_code: [
-    {
-      type = "basic";
-      from = {
-        inherit key_code;
-        modifiers.mandatory = [ "shift" ];
-      };
-      to = [
-        {
-          inherit key_code;
-          modifiers = [
-            "option"
-            "shift"
-          ];
-        }
-      ];
-      conditions = corneOnlyCondition;
-    }
-    {
-      type = "basic";
-      from = {
-        inherit key_code;
-      };
-      to = [
-        {
-          inherit key_code;
-          modifiers = [ "option" ];
-        }
-      ];
-      conditions = corneOnlyCondition;
-    }
-  ];
-
   makeControlToCommandManipulator = fromLetter: toLetter: {
     type = "basic";
     from = {
@@ -122,12 +89,6 @@ let
         selected = true;
         virtual_hid_keyboard.keyboard_type_v2 = "ansi";
         complex_modifications.rules = [
-          {
-            description = "Corne ABNT2 dead key to regular character (matches Linux br nodeadkeys)";
-            manipulators =
-              (makeCorneDeadKeyToRegularManipulators "quote")
-              ++ (makeCorneDeadKeyToRegularManipulators "open_bracket");
-          }
           {
             description = "Cmd+D to Show Desktop (Fn+F11)";
             manipulators = [
