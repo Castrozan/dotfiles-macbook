@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 let
   processUtilsPath = if pkgs.stdenv.isDarwin then "/usr/bin:/bin:" else "${pkgs.procps}/bin:";
 in
