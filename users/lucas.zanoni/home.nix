@@ -41,6 +41,8 @@
 
     ../../home/modules/dev/devenv.nix
     ../../home/modules/dev/git.nix
+    ../../home/modules/dev/glab.nix
+    ../../home/modules/dev/jira.nix
     ../../home/modules/dev/lazygit.nix
     ../../home/modules/dev/scripts.nix
 
