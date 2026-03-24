@@ -21,7 +21,7 @@ fi
 
 CURRENT_TMUX_PANE="$TMUX_PANE"
 
-CLAUDE_CMDLINE=$(tr '\0' ' ' </proc/"$CLAUDE_PID"/cmdline)
+CLAUDE_CMDLINE=$(ps -ww -p "$CLAUDE_PID" -o args= 2>/dev/null || echo "")
 EXTRACTED_SESSION_ID=""
 if [[ "$CLAUDE_CMDLINE" =~ --resume[[:space:]]+([a-f0-9-]+) ]]; then
 	EXTRACTED_SESSION_ID="${BASH_REMATCH[1]}"
