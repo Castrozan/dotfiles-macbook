@@ -17,7 +17,6 @@ let
   };
 
   claudeGlobalSettings = {
-    installMethod = "native";
     model = "opus[1m]";
     effortLevel = "high";
     language = "english";
@@ -113,15 +112,13 @@ in
       '';
     };
 
-    activation.patchClaudeJsonInstallMethod = {
+    activation.removeNativeInstallMethodFromClaudeJson = {
       after = [ "writeBoundary" ];
       before = [ ];
       data = ''
         CLAUDE_JSON="$HOME/.claude.json"
-        if [ -f "$CLAUDE_JSON" ]; then
-          ${pkgs.jq}/bin/jq '.installMethod = "native"' "$CLAUDE_JSON" > "$CLAUDE_JSON.tmp" && mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
-        else
-          echo '{"installMethod": "native"}' > "$CLAUDE_JSON"
+        if [ -f "$CLAUDE_JSON" ] && ${pkgs.jq}/bin/jq -e '.installMethod == "native"' "$CLAUDE_JSON" >/dev/null 2>&1; then
+          ${pkgs.jq}/bin/jq 'del(.installMethod)' "$CLAUDE_JSON" > "$CLAUDE_JSON.tmp" && mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
         fi
       '';
     };
