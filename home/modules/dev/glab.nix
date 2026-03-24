@@ -27,7 +27,8 @@ let
   deployGlabConfigScript = pkgs.writeShellScript "deploy-glab-config" ''
     set -euo pipefail
     mkdir -p "$(dirname "${glabConfigDestination}")"
-    cp -f "${glabConfigSource}" "${glabConfigDestination}"
+    rm -f "${glabConfigDestination}"
+    cp "${glabConfigSource}" "${glabConfigDestination}"
     chmod 600 "${glabConfigDestination}"
   '';
 in
