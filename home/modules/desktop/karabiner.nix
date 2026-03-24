@@ -4,25 +4,11 @@
   ...
 }:
 let
-  corneKeyboardIdentifiers = [
-    {
-      vendor_id = 21972;
-      product_id = 1121;
-    }
-  ];
-
   terminalBundleIdentifiers = [
     "^com\\.github\\.wez\\.wezterm$"
     "^net\\.kovidgoyal\\.kitty$"
     "^com\\.apple\\.Terminal$"
     "^com\\.googlecode\\.iterm2$"
-  ];
-
-  corneOnlyCondition = [
-    {
-      type = "device_if";
-      identifiers = corneKeyboardIdentifiers;
-    }
   ];
 
   excludeTerminalsCondition = [
