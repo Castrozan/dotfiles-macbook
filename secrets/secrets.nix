@@ -9,4 +9,6 @@ in
 {
   "credentials/obsidian-headless-auth-token.age".publicKeys = all_keys;
   "credentials/obsidian-headless-sync-config.age".publicKeys = all_keys;
+  "credentials/glab-token.age".publicKeys = all_keys;
+  "credentials/jira-api-token.age".publicKeys = all_keys;
 }
