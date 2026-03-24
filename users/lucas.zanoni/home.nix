@@ -17,6 +17,7 @@
     ../../home/modules/claude/skills.nix
     ../../home/modules/claude/hooks.nix
     ../../home/modules/claude/private.nix
+    ../../home/modules/claude/scripts.nix
     ../../home/modules/claude/workspace-trust.nix
 
     ../../home/modules/terminal/atuin.nix
