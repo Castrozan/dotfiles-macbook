@@ -13,6 +13,8 @@
     fzf
     gh
     git
+    glab
+    jira-cli-go
     jq
     nixd
     nixfmt-rfc-style
