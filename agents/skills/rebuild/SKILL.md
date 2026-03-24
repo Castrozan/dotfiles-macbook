@@ -14,12 +14,9 @@ Nix reads from git index, not working tree. Stage all modified .nix files before
 <execution>
 The `rebuild` script is packaged via `hosts/macbook/scripts/rebuild.nix` and available in PATH after first install. It sources nix-daemon.sh if needed, stages unstaged .nix files, and runs `sudo darwin-rebuild switch --flake ~/.dotfiles#macbook`. Pass extra args like `--dry-run` directly.
 
-The Bash tool does not inherit the user's full PATH. To run rebuild from Claude Code's Bash tool:
-```
-export PATH="/run/current-system/sw/bin:/etc/profiles/per-user/lucas.zanoni/bin:/nix/var/nix/profiles/default/bin:$PATH" && rebuild
-```
+The Bash tool inherits PATH from Claude Code's `env.PATH` setting in `settings.json`, which includes all Nix profile paths. Just run `rebuild` directly — no PATH export needed.
 
-For the first bootstrap (before the rebuild script exists in PATH), run directly:
+For the first bootstrap (before the rebuild script or settings.json exist), run directly:
 ```
 export PATH="/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH" && sudo darwin-rebuild switch --flake ~/.dotfiles#macbook
 ```
