@@ -1,6 +1,6 @@
 { pkgs, lib, ... }:
 let
-  processUtilsPath = lib.optionalString pkgs.stdenv.isLinux "${pkgs.procps}/bin:";
+  processUtilsPath = if pkgs.stdenv.isDarwin then "/usr/bin:/bin:" else "${pkgs.procps}/bin:";
 in
 {
   home.packages = [
