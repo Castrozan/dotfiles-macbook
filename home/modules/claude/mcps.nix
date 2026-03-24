@@ -43,19 +43,53 @@ let
     fi
   '';
 
+  devToolsActivePortFile = "${homeDir}/Library/Application Support/Google/Chrome/DevToolsActivePort";
+  maxWaitForChromeSeconds = 30;
+
   chromeDevtoolsMcpAutoconnectWrapper = pkgs.writeShellScriptBin "chrome-devtools-mcp-autoconnect" ''
     set -euo pipefail
     export PATH="${nodejs}/bin:''${PATH:+:$PATH}"
 
     readonly MCP_BINARY="${chromeDevtoolsMcpBinary}"
+    readonly DEVTOOLS_ACTIVE_PORT_FILE="${devToolsActivePortFile}"
+    readonly MAX_WAIT=${toString maxWaitForChromeSeconds}
 
     if ! "$MCP_BINARY" --version >/dev/null 2>&1; then
       echo "chrome-devtools-mcp not found at $MCP_BINARY" >&2
       exit 1
     fi
 
+    _wait_for_devtools_active_port() {
+      if [ -f "$DEVTOOLS_ACTIVE_PORT_FILE" ]; then
+        return 0
+      fi
+
+      echo "Waiting for Chrome DevToolsActivePort..." >&2
+      for _attempt in $(seq 1 "$MAX_WAIT"); do
+        if [ -f "$DEVTOOLS_ACTIVE_PORT_FILE" ]; then
+          return 0
+        fi
+        sleep 1
+      done
+
+      echo "DevToolsActivePort not found after ''${MAX_WAIT}s" >&2
+      exit 1
+    }
+
+    _build_websocket_endpoint() {
+      local port ws_path
+      port=$(sed -n '1p' "$DEVTOOLS_ACTIVE_PORT_FILE")
+      ws_path=$(sed -n '2p' "$DEVTOOLS_ACTIVE_PORT_FILE")
+      echo "ws://127.0.0.1:''${port}''${ws_path}"
+    }
+
+    _wait_for_devtools_active_port
+
+    readonly WS_ENDPOINT=$(_build_websocket_endpoint)
+    echo "Connecting to Chrome at $WS_ENDPOINT" >&2
+
     exec "$MCP_BINARY" \
-      --autoConnect \
+      --wsEndpoint "$WS_ENDPOINT" \
       --usageStatistics false \
       "$@"
   '';
