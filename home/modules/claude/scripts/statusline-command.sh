@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 export LC_NUMERIC=C
-export PATH="/run/current-system/sw/bin:/etc/profiles/per-user/${USER}/bin:/nix/var/nix/profiles/default/bin:/usr/bin:/bin:${PATH:-}"
 
 readonly COLOR_CYAN='\033[36m'
 readonly COLOR_YELLOW='\033[33m'
