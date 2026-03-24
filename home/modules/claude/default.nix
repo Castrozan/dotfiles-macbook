@@ -3,6 +3,7 @@
   imports = [
     ./claude.nix
     ./config.nix
+    ./mcps.nix
     ./skills.nix
     ./hooks.nix
     ./private.nix
