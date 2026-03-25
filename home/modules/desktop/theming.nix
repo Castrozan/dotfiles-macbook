@@ -126,6 +126,35 @@ in
     };
   };
 
+  programs.wezterm.extraConfig = lib.mkBefore ''
+    local themeTerminalColors = config.colors or {}
+    themeTerminalColors.ansi = {
+      "${themeColorsToml.color0}",
+      "${themeColorsToml.color1}",
+      "${themeColorsToml.color2}",
+      "${themeColorsToml.color3}",
+      "${themeColorsToml.color4}",
+      "${themeColorsToml.color5}",
+      "${themeColorsToml.color6}",
+      "${themeColorsToml.color7}",
+    }
+    themeTerminalColors.brights = {
+      "${themeColorsToml.color8}",
+      "${themeColorsToml.color9}",
+      "${themeColorsToml.color10}",
+      "${themeColorsToml.color11}",
+      "${themeColorsToml.color12}",
+      "${themeColorsToml.color13}",
+      "${themeColorsToml.color14}",
+      "${themeColorsToml.color15}",
+    }
+    themeTerminalColors.cursor_bg = "${themeColorsToml.cursor}"
+    themeTerminalColors.cursor_fg = "${themeColorsToml.background}"
+    themeTerminalColors.selection_bg = "${themeColorsToml.selection_background}"
+    themeTerminalColors.selection_fg = "${themeColorsToml.selection_foreground}"
+    config.colors = themeTerminalColors
+  '';
+
   home.activation.applyMacosThemeAppearance = lib.hm.dag.entryAfter [
     "writeBoundary"
   ] macosAppearanceActivationScript;

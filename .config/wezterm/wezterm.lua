@@ -31,6 +31,12 @@ return {
   window_decorations = 'RESIZE',
   use_resize_increments = false,
   window_background_opacity = 0.85,
+
+  foreground_text_hsb = {
+    hue = 1.0,
+    saturation = 1.1,
+    brightness = 1.2,
+  },
   macos_window_background_blur = 20,
   enable_tab_bar = false,
   hide_tab_bar_if_only_one_tab = true,
