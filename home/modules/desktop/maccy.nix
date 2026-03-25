@@ -7,5 +7,6 @@
     /usr/bin/defaults write org.p0deje.Maccy pasteByDefault -bool true
     /usr/bin/defaults write org.p0deje.Maccy SUEnableAutomaticChecks -bool false
     /usr/bin/defaults write org.p0deje.Maccy loginItemEnabled -bool true
+    /usr/bin/defaults write org.p0deje.Maccy showCopyNotification -bool false
   '';
 }
