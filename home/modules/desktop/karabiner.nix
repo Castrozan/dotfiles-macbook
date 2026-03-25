@@ -43,6 +43,37 @@ let
     conditions = excludeTerminalsCondition;
   };
 
+  tabSwitchingNumbers = [
+    "1"
+    "2"
+    "3"
+    "4"
+    "5"
+    "6"
+    "7"
+    "8"
+    "9"
+    "0"
+  ];
+
+  makeAltNumberToCommandNumberManipulator = number: {
+    type = "basic";
+    from = {
+      key_code = number;
+      modifiers = {
+        mandatory = [ "option" ];
+        optional = [ "any" ];
+      };
+    };
+    to = [
+      {
+        key_code = number;
+        modifiers = [ "command" ];
+      }
+    ];
+    conditions = excludeTerminalsCondition;
+  };
+
   controlToCommandLetters = [
     "a"
     "b"
@@ -228,6 +259,10 @@ let
                 conditions = excludeTerminalsCondition;
               }
             ];
+          }
+          {
+            description = "Linux-style Alt+Number to Cmd+Number for tab switching (except in terminals)";
+            manipulators = map makeAltNumberToCommandNumberManipulator tabSwitchingNumbers;
           }
           {
             description = "Linux-style Ctrl to Cmd shortcuts (except in terminals)";
