@@ -1,8 +1,3 @@
----
-name: restart
-description: Auto-restart the current Claude Code session. Use when context is stale, session needs a fresh reload, or user explicitly asks to restart. Requires tmux.
----
-
 <prerequisites>
 Running inside tmux. Commit any pending changes before restarting.
 </prerequisites>

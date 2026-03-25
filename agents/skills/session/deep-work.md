@@ -1,8 +1,3 @@
----
-name: deep-work
-description: Context management for large multi-step work — preserves user prompts verbatim, maintains plans, and survives compactions and session jumps. Use when starting ambitious tasks that span multiple sessions or require prompt preservation.
----
-
 <activation>
 Activate when any condition is met: user says "big work" or similar, task has more than 5 discrete steps, work will clearly span multiple sessions, or user explicitly asks to preserve context. Do not activate for quick fixes, single-file edits, or tasks completable in one exchange. When in doubt, ask — the overhead of deep-work management on a small task wastes more than it saves.
 </activation>

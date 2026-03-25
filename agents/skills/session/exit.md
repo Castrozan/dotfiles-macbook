@@ -1,8 +1,3 @@
----
-name: exit
-description: Safely terminate the current Claude Code session. Use when user explicitly asks to end session.
----
-
 <prerequisites>
 All tasks complete. Changes committed if applicable. Summarize accomplishments.
 </prerequisites>

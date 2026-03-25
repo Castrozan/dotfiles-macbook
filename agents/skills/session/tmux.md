@@ -1,15 +1,8 @@
----
-name: tmux
-description: Tmux session and process control. Use when restarting dev servers, checking process output, stopping/starting background processes, or managing services in tmux panes.
----
-
 <socket_trap>
-Hyprland sets TMUX_TMPDIR=$XDG_RUNTIME_DIR, placing the socket at /run/user/$UID/tmux-$UID/default. Bare tmux commands use /tmp and will fail silently with "no server running" even when sessions exist.
-
-Detect socket once and bind a short alias for the entire script:
+On macOS, tmux typically uses the default socket at /tmp/tmux-$UID/default. On Linux with Hyprland, TMUX_TMPDIR may redirect the socket to /run/user/$UID/tmux-$UID/default. Detect socket once and bind a short alias:
 
 ```sh
-TMUX_SOCKET=$(find /run/user/$(id -u)/tmux-$(id -u) /tmp/tmux-$(id -u) -name default -type s 2>/dev/null | head -1)
+TMUX_SOCKET=$(find /tmp/tmux-$(id -u) /run/user/$(id -u)/tmux-$(id -u) -name default -type s 2>/dev/null | head -1)
 t() { tmux -S "$TMUX_SOCKET" "$@"; }
 ```
 
@@ -25,7 +18,7 @@ Pane index depends on `pane-base-index` tmux option — always check with list-p
 </targeting_pitfall>
 
 <error_recovery>
-"can't find session" after new-session: race condition — verify with list-sessions before operating. "no server running": socket path wrong — use the /run/user/ path. Process not stopping: send C-c multiple times. Output garbled: use -J flag.
+"can't find session" after new-session: race condition — verify with list-sessions before operating. "no server running": socket path wrong — use the detected socket path. Process not stopping: send C-c multiple times. Output garbled: use -J flag.
 </error_recovery>
 
 <practices>
