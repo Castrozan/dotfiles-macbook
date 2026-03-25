@@ -7,6 +7,25 @@ on:
       - "CLAUDE.md"
 
 jobs:
+  baseline-check:
+    runs-on: ubuntu-latest
+    if: ${{ vars.ENABLE_EVALS == 'true' }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install pyyaml
+        run: pip install pyyaml
+
+      - name: Check baseline for regression
+        run: python3 agents/evals/run-evals.py --check-baseline
+
   skill-evals:
     runs-on: ubuntu-latest
     if: ${{ vars.ENABLE_EVALS == 'true' }}
