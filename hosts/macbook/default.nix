@@ -27,6 +27,11 @@
       CustomUserPreferences = {
         ".GlobalPreferences".AppleActionOnDoubleClick = "None";
         ".GlobalPreferences"."com.apple.scrollwheel.scaling" = -1;
+        "com.apple.universalaccess" = {
+          closeViewScrollWheelToggle = true;
+          HIDScrollZoomModifierMask = 262144;
+          closeViewZoomFollowsFocus = true;
+        };
         "com.apple.driver.AppleBluetoothMultitouch.mouse"."MouseMomentumScroll" = false;
         "com.apple.AppleMultitouchMouse"."MouseMomentumScroll" = false;
         "com.apple.AppleMultitouchTrackpad"."TrackpadFourFingerPinchGesture" = 0;
