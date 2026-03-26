@@ -85,14 +85,14 @@
         cmd-up = "focus up";
         cmd-down = "focus down";
 
-        cmd-ctrl-left = "workspace prev";
-        cmd-ctrl-right = "workspace next";
+        ctrl-alt-left = "workspace prev";
+        ctrl-alt-right = "workspace next";
 
-        cmd-ctrl-shift-left = [
+        ctrl-alt-shift-left = [
           "move-node-to-workspace prev"
           "workspace prev"
         ];
-        cmd-ctrl-shift-right = [
+        ctrl-alt-shift-right = [
           "move-node-to-workspace next"
           "workspace next"
         ];
