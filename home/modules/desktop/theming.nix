@@ -26,11 +26,17 @@ let
   themeAccentColorHex = removeHashFromColor themeColorsToml.accent;
 
   macosAppearanceActivationScript = ''
-    /usr/bin/osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to ${
-      if themeIsLight then "false" else "true"
-    }' || true
+    CURRENT_DARK_MODE=$(/usr/bin/osascript -e 'tell application "System Events" to tell appearance preferences to get dark mode')
+    DESIRED_DARK_MODE="${if themeIsLight then "false" else "true"}"
+    if [ "$CURRENT_DARK_MODE" != "$DESIRED_DARK_MODE" ]; then
+      /usr/bin/osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to '"$DESIRED_DARK_MODE" || true
+    fi
 
-    /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "${selectedWallpaperPath}"' || true
+    CURRENT_WALLPAPER=$(/usr/bin/osascript -e 'tell application "System Events" to tell desktop 1 to get picture')
+    DESIRED_WALLPAPER="${selectedWallpaperPath}"
+    if [ "$CURRENT_WALLPAPER" != "$DESIRED_WALLPAPER" ]; then
+      /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "'"$DESIRED_WALLPAPER"'"' || true
+    fi
 
     MACOS_ACCENT_COLOR=$(/usr/bin/python3 -c "
     import colorsys
@@ -47,10 +53,13 @@ let
     else: print(6)
     ")
 
-    if [ "$MACOS_ACCENT_COLOR" = "4" ]; then
-      /usr/bin/defaults delete -g AppleAccentColor 2>/dev/null || true
-    else
-      /usr/bin/defaults write -g AppleAccentColor -int "$MACOS_ACCENT_COLOR"
+    CURRENT_ACCENT_COLOR=$(/usr/bin/defaults read -g AppleAccentColor 2>/dev/null || echo "4")
+    if [ "$MACOS_ACCENT_COLOR" != "$CURRENT_ACCENT_COLOR" ]; then
+      if [ "$MACOS_ACCENT_COLOR" = "4" ]; then
+        /usr/bin/defaults delete -g AppleAccentColor 2>/dev/null || true
+      else
+        /usr/bin/defaults write -g AppleAccentColor -int "$MACOS_ACCENT_COLOR"
+      fi
     fi
   '';
 in
