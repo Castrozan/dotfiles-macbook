@@ -1,4 +1,4 @@
-# PC Habilities — AI Agent Desktop Capabilities
+# PC Habilities: AI Agent Desktop Capabilities
 
 ## Current Capability Map (macOS)
 
@@ -20,15 +20,15 @@
 
 **Grouped skills** (keyboard + mouse + screenshot → desktop, media-control + youtube → media, deep-work + worktrees + tmux + restart + exit → session):
 
-1. **Reduced description overhead** — 20 top-level skills instead of 27 means fewer descriptions loaded into context
-2. **Token efficiency** — agents load parent SKILL.md first, then only the subskill .md they need
-3. **Better routing** — grouped descriptions are more distinctive for skill selection
-4. **Composability preserved** — subskill .md files remain independently readable
+1. **Reduced description overhead**: 20 top-level skills instead of 27 means fewer descriptions loaded into context
+2. **Token efficiency**: agents load parent SKILL.md first, then only the subskill .md they need
+3. **Better routing**: grouped descriptions are more distinctive for skill selection
+4. **Composability preserved**: subskill .md files remain independently readable
 
 ## Implementation Notes
 
 Grouped skills follow a two-level pattern:
-- `agents/skills/{group}/SKILL.md` with YAML frontmatter (name, description ≤30 words) — the routing target
-- `agents/skills/{group}/{subskill}.md` body-only files (no frontmatter) — loaded on demand
+- `agents/skills/{group}/SKILL.md` with YAML frontmatter (name, description ≤30 words), the routing target
+- `agents/skills/{group}/{subskill}.md` body-only files (no frontmatter), loaded on demand
 - `agents/skills/{group}/scripts/` for shell/Python implementations
 - `agents/skills/{group}/evals/navigation.yaml` tests that subskill routing works

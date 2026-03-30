@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""YouTube CLI — search videos and manage playlists via YouTube Data API v3."""
+"""YouTube CLI: search videos and manage playlists via YouTube Data API v3."""
 
 import argparse
 import json
@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 
 CREDENTIALS_PATH = os.environ.get(
-    "YOUTUBE_CLI_CREDENTIALS", str(Path.home() / ".config" / "youtube-cli" / "credentials.json")
+    "YOUTUBE_CLI_CREDENTIALS",
+    str(Path.home() / ".config" / "youtube-cli" / "credentials.json"),
 )
 TOKEN_PATH = os.environ.get(
     "YOUTUBE_CLI_TOKEN", str(Path.home() / ".config" / "youtube-cli" / "token.json")
@@ -49,7 +50,9 @@ def get_authenticated_service():
                 )
                 sys.exit(1)
 
-            flow = InstalledAppFlow.from_client_secrets_file(str(credentials_path), SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(
+                str(credentials_path), SCOPES
+            )
             credentials = flow.run_local_server(port=0)
 
         token_path.parent.mkdir(parents=True, exist_ok=True)
@@ -74,7 +77,10 @@ def search_videos(query, max_results=10):
     )
 
     if result.returncode != 0:
-        print(json.dumps({"error": "search_failed", "stderr": result.stderr}), file=sys.stderr)
+        print(
+            json.dumps({"error": "search_failed", "stderr": result.stderr}),
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     videos = []
@@ -86,7 +92,8 @@ def search_videos(query, max_results=10):
             {
                 "id": data.get("id"),
                 "title": data.get("title"),
-                "url": data.get("url") or f"https://www.youtube.com/watch?v={data.get('id')}",
+                "url": data.get("url")
+                or f"https://www.youtube.com/watch?v={data.get('id')}",
                 "channel": data.get("channel") or data.get("uploader"),
                 "duration": data.get("duration"),
                 "view_count": data.get("view_count"),
@@ -162,7 +169,9 @@ def add_to_playlist(playlist_id, video_ids):
                 }
             )
         except Exception as exception:
-            results.append({"status": "error", "video_id": video_id, "error": str(exception)})
+            results.append(
+                {"status": "error", "video_id": video_id, "error": str(exception)}
+            )
 
     print(json.dumps(results, indent=2))
 
@@ -177,7 +186,13 @@ def remove_from_playlist(playlist_item_ids):
             youtube.playlistItems().delete(id=item_id.strip()).execute()
             results.append({"status": "removed", "playlist_item_id": item_id})
         except Exception as exception:
-            results.append({"status": "error", "playlist_item_id": item_id, "error": str(exception)})
+            results.append(
+                {
+                    "status": "error",
+                    "playlist_item_id": item_id,
+                    "error": str(exception),
+                }
+            )
 
     print(json.dumps(results, indent=2))
 
@@ -185,7 +200,9 @@ def remove_from_playlist(playlist_item_ids):
 def list_my_playlists(max_results=25):
     """List the authenticated user's playlists."""
     youtube = get_authenticated_service()
-    request = youtube.playlists().list(part="snippet,contentDetails", mine=True, maxResults=max_results)
+    request = youtube.playlists().list(
+        part="snippet,contentDetails", mine=True, maxResults=max_results
+    )
     response = request.execute()
 
     playlists = []
@@ -231,7 +248,9 @@ def create_playlist(title, description="", privacy="private"):
 def video_info(video_ids):
     """Get detailed info about specific videos."""
     youtube = get_authenticated_service()
-    request = youtube.videos().list(part="snippet,contentDetails,statistics", id=",".join(video_ids))
+    request = youtube.videos().list(
+        part="snippet,contentDetails,statistics", id=",".join(video_ids)
+    )
     response = request.execute()
 
     videos = []
@@ -276,30 +295,46 @@ def extract_playlist_id_from_url(url):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="YouTube CLI — search and manage playlists")
+    parser = argparse.ArgumentParser(
+        description="YouTube CLI: search and manage playlists"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     search_parser = subparsers.add_parser("search", help="Search YouTube videos")
     search_parser.add_argument("query", help="Search query")
-    search_parser.add_argument("-n", "--max-results", type=int, default=10, help="Number of results")
+    search_parser.add_argument(
+        "-n", "--max-results", type=int, default=10, help="Number of results"
+    )
 
-    playlist_list_parser = subparsers.add_parser("playlist-list", help="List videos in a playlist")
+    playlist_list_parser = subparsers.add_parser(
+        "playlist-list", help="List videos in a playlist"
+    )
     playlist_list_parser.add_argument("playlist", help="Playlist ID or URL")
     playlist_list_parser.add_argument("-n", "--max-results", type=int, default=50)
 
-    playlist_add_parser = subparsers.add_parser("playlist-add", help="Add videos to a playlist")
+    playlist_add_parser = subparsers.add_parser(
+        "playlist-add", help="Add videos to a playlist"
+    )
     playlist_add_parser.add_argument("playlist", help="Playlist ID or URL")
     playlist_add_parser.add_argument("videos", nargs="+", help="Video IDs or URLs")
 
-    playlist_remove_parser = subparsers.add_parser("playlist-remove", help="Remove videos from playlist")
-    playlist_remove_parser.add_argument("item_ids", nargs="+", help="Playlist item IDs (from playlist-list)")
+    playlist_remove_parser = subparsers.add_parser(
+        "playlist-remove", help="Remove videos from playlist"
+    )
+    playlist_remove_parser.add_argument(
+        "item_ids", nargs="+", help="Playlist item IDs (from playlist-list)"
+    )
 
     subparsers.add_parser("playlists", help="List your playlists")
 
-    create_parser = subparsers.add_parser("playlist-create", help="Create a new playlist")
+    create_parser = subparsers.add_parser(
+        "playlist-create", help="Create a new playlist"
+    )
     create_parser.add_argument("title", help="Playlist title")
     create_parser.add_argument("-d", "--description", default="")
-    create_parser.add_argument("-p", "--privacy", choices=["public", "private", "unlisted"], default="private")
+    create_parser.add_argument(
+        "-p", "--privacy", choices=["public", "private", "unlisted"], default="private"
+    )
 
     info_parser = subparsers.add_parser("info", help="Get video details")
     info_parser.add_argument("videos", nargs="+", help="Video IDs or URLs")

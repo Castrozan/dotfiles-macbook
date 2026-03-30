@@ -4,7 +4,7 @@ description: Scrape X/Twitter posts, profiles, search results, followers, and tr
 ---
 
 <tool_selection>
-Two backends. Default to grok-search for search and analysis tasks — returns synthesized answers with citations (~$0.05-0.20 per search). Use twikit-cli for raw JSON data, write operations (post, reply, like, retweet, DM), and personal account access (timeline, bookmarks, followers). When twikit breaks or cookies expire, fall back to grok-search. Run each tool with --help for available commands and flags.
+Two backends. Default to grok-search for search and analysis tasks, which returns synthesized answers with citations (~$0.05-0.20 per search). Use twikit-cli for raw JSON data, write operations (post, reply, like, retweet, DM), and personal account access (timeline, bookmarks, followers). When twikit breaks or cookies expire, fall back to grok-search. Run each tool with --help for available commands and flags.
 </tool_selection>
 
 <auth_traps>

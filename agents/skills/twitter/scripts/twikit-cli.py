@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""twikit-cli — CLI wrapper for twikit, optimized for agent use.
+"""twikit-cli: CLI wrapper for twikit, optimized for agent use.
 
 Outputs JSON for machine consumption. Loads cookies from
 ~/.config/twikit/cookies.json (login once, reuse forever).
@@ -115,7 +115,7 @@ async def get_client():
 
 
 async def command_login(args):
-    """Login — uses agenix secrets or interactive fallback. Saves cookies."""
+    """Login using agenix secrets or interactive fallback. Saves cookies."""
     from twikit import Client
 
     client = Client("en-US")
@@ -414,7 +414,7 @@ async def command_whoami(args):
 def main():
     parser = argparse.ArgumentParser(
         prog="twikit-cli",
-        description="X/Twitter CLI for agents — JSON output, cookie-based auth",
+        description="X/Twitter CLI for agents, JSON output, cookie-based auth",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

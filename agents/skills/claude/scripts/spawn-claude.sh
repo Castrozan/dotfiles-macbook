@@ -137,7 +137,7 @@ main() {
 
 	_send_command_to_tmux_pane "${session}:${window_name}" "$claude_command" "$tmux_socket"
 
-	echo "Spawned claude in ${session}:${window_name} — working from ${instructions_file}"
+	echo "Spawned claude in ${session}:${window_name}, working from ${instructions_file}"
 }
 
 main "$@"

@@ -1,6 +1,6 @@
 ---
 name: desktop
-description: Interact with the desktop — type text, send key combos, click/move/scroll/drag mouse, capture screenshots, read/write clipboard. Use for any non-browser GUI automation.
+description: Interact with the desktop: type text, send key combos, click/move/scroll/drag mouse, capture screenshots, read/write clipboard. Use for any non-browser GUI automation.
 ---
 
 Desktop interaction skill covering keyboard input, mouse control, and screenshots. Uses macOS-native tools: osascript for keyboard and mouse events, screencapture for screenshots, pbcopy/pbpaste for clipboard.

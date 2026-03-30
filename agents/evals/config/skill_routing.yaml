@@ -9,39 +9,39 @@ shared_system_prompt: &shared_system_prompt |
 
   commit - Create high-quality git commits with conventional format, meaningful descriptions, and analysis of changes. Use when user asks to commit, stage changes, or prepare a commit message.
 
-  desktop - Interact with the desktop — type text, send key combos, click/move/scroll/drag mouse, capture screenshots, read/write clipboard. Use for any non-browser GUI automation.
+  desktop - Interact with the desktop: type text, send key combos, click/move/scroll/drag mouse, capture screenshots, read/write clipboard. Use for any non-browser GUI automation.
 
   devenv - Manage Nix-based development environments with devenv. Use when creating, configuring, or debugging devenv shells, adding packages or services to devenv.nix, or setting up project-specific dev environments with processes, databases, or language toolchains.
 
-  docs - Documentation policies and standards. Use when creating, updating, or reviewing any documentation — READMEs, TESTING.md, inline docs, file headers, or doc-related PRs.
+  docs - Documentation policies and standards. Use when creating, updating, or reviewing any documentation (READMEs, TESTING.md, inline docs, file headers, or doc-related PRs).
 
   dotfiles - User Nix based dotfiles repository. Use when adding modules, modifying user configs, managing secrets, understanding file organization, debugging rebuilds, or unsure where something belongs.
 
-  glab - GitLab CLI operations — merge requests, issues, pipelines, CI/CD. Use when user asks to create MRs, check pipeline status, review GitLab issues, or interact with GitLab repositories.
+  glab - GitLab CLI operations: merge requests, issues, pipelines, CI/CD. Use when user asks to create MRs, check pipeline status, review GitLab issues, or interact with GitLab repositories.
 
   instructions - Use when creating skills, agents, system prompts, optimizing AI instructions. Also use when instructions feel stale, vague, or are being ignored by the model. Prompt engineering, context engineering.
 
-  jira - Jira issue tracking — create, update, search, transition issues. Use when user asks to manage Jira tickets, check sprint status, log work, or interact with Jira projects.
+  jira - Jira issue tracking: create, update, search, transition issues. Use when user asks to manage Jira tickets, check sprint status, log work, or interact with Jira projects.
 
-  media - Media playback control and YouTube operations — play, pause, volume, next, previous, video search, playlists management.
+  media - Media playback control and YouTube operations: play, pause, volume, next, previous, video search, playlists management.
 
   nix-expert - Nix language and ecosystem expert. Use for writing/debugging Nix expressions, lazy evaluation and fixed-points, derivations and overlays, module system internals (mkIf, mkMerge, types), flake design, ecosystem tools (devenv, direnv, cachix, agenix). For THIS dotfiles repository, use dotfiles skill instead.
 
   notify - Notify the user after completing substantial work. Use when finishing long tasks, implementations, or background operations. Plays audio and shows a desktop notification by default.
 
-  obsidian - Manage the Obsidian vault — daily notes, TODO tracking, activity logging, and inbox processing. Use when user mentions daily note, wants to log activity, add/check TODOs, review pending tasks, plan their day, process saved items, or interact with the vault.
+  obsidian - Manage the Obsidian vault: daily notes, TODO tracking, activity logging, and inbox processing. Use when user mentions daily note, wants to log activity, add/check TODOs, review pending tasks, plan their day, process saved items, or interact with the vault.
 
   rebuild - Apply Nix configuration changes. Use when modifying .nix files, after flake updates, or when user asks to rebuild/apply dotfiles changes.
 
   research - Current-information research and synthesis for tools, vendors, standards, or decisions. Use when the user asks to research, compare, evaluate, verify, or find the latest external information; not for local repo search.
 
-  session - Session lifecycle and context preservation — deep work context management, git worktrees for parallel branches, tmux control for background processes, session restart and exit.
+  session - Session lifecycle and context preservation: deep work context management, git worktrees for parallel branches, tmux control for background processes, session restart and exit.
 
   test - Testing methodology and verification workflow. Use when implementing, fixing, or modifying any code. Defines the test-first, test-after, and pre-delivery verification protocol.
 
   tldr - Compress agent output to maximum density. Use when responses are too long, over-explained, or when user wants the essential information without filler.
 
-  twitter - Scrape and post on X/Twitter — search tweets, read profiles, check trends, post tweets. Use when user asks about Twitter/X content, wants to post, or needs social media data.
+  twitter - Scrape and post on X/Twitter: search tweets, read profiles, check trends, post tweets. Use when user asks about Twitter/X content, wants to post, or needs social media data.
 
 tests:
   - name: routing_to_desktop_keyboard_typing

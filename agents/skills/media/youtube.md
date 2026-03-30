@@ -3,5 +3,5 @@ youtube-cli is an agent-optimized CLI for YouTube. Search via yt-dlp (no auth ne
 </overview>
 
 <setup_trap>
-OAuth2 credentials needed for playlist operations only. Create OAuth 2.0 Client ID (Desktop application) in Google Cloud Console with YouTube Data API v3 enabled. Save to ~/.config/youtube-cli/credentials.json. First playlist command opens browser for authorization — must use headed mode.
+OAuth2 credentials needed for playlist operations only. Create OAuth 2.0 Client ID (Desktop application) in Google Cloud Console with YouTube Data API v3 enabled. Save to ~/.config/youtube-cli/credentials.json. First playlist command opens browser for authorization, so must use headed mode.
 </setup_trap>

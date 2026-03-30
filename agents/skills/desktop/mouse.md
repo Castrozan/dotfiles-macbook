@@ -3,5 +3,5 @@ Run scripts/mouse.sh with subcommands: click X Y, move X Y, scroll DIRECTION [AM
 </usage>
 
 <pitfalls>
-Coordinates are absolute pixels from top-left of the display. Always take a screenshot first to identify target coordinates — never click blindly. On macOS, uses osascript mouse events. On Linux, requires ydotool and ydotoold daemon with uinput access. For browser clicks, use the browser skill instead (element-based, not coordinate-based).
+Coordinates are absolute pixels from top-left of the display. Always take a screenshot first to identify target coordinates; never click blindly. On macOS, uses osascript mouse events. On Linux, requires ydotool and ydotoold daemon with uinput access. For browser clicks, use the browser skill instead (element-based, not coordinate-based).
 </pitfalls>

@@ -8,7 +8,7 @@ description: Manage GitLab merge requests, issues, pipelines, and code review vi
 </announcement>
 
 <auth>
-Token is managed by agenix and exported as GITLAB_TOKEN. The GitLab instance is git.coates.io — glab must be configured to target this host, not gitlab.com. Run `glab auth status` to verify authentication before operations. If auth fails, check that source-secrets.sh has been sourced (rebuild activates it).
+Token is managed by agenix and exported as GITLAB_TOKEN. The GitLab instance is git.coates.io; glab must be configured to target this host, not gitlab.com. Run `glab auth status` to verify authentication before operations. If auth fails, check that source-secrets.sh has been sourced (rebuild activates it).
 </auth>
 
 <merge_requests>
@@ -26,7 +26,7 @@ Updating: `glab mr update` supports prefix modifiers on `--assignee` and `--revi
 </issues>
 
 <ci_cd>
-`glab ci status` shows current pipeline state — use `--live` for real-time updates. `glab ci view` opens an interactive TUI with vi keybindings. `glab ci trace` streams job logs. `glab ci run` triggers a new pipeline — pass variables with `--variables key:value`. `glab ci lint` validates .gitlab-ci.yml before pushing. `glab ci retry` retries failed jobs by ID or name.
+`glab ci status` shows current pipeline state (use `--live` for real-time updates). `glab ci view` opens an interactive TUI with vi keybindings. `glab ci trace` streams job logs. `glab ci run` triggers a new pipeline; pass variables with `--variables key:value`. `glab ci lint` validates .gitlab-ci.yml before pushing. `glab ci retry` retries failed jobs by ID or name.
 </ci_cd>
 
 <api_access>
@@ -34,7 +34,7 @@ Updating: `glab mr update` supports prefix modifiers on `--assignee` and `--revi
 </api_access>
 
 <worktree_trap>
-PR commands must run from the main repo directory, not a git worktree — glab misdetects the repo context inside worktrees. Use `--head <branch>` to target the worktree branch from the main repo.
+PR commands must run from the main repo directory, not a git worktree, because glab misdetects the repo context inside worktrees. Use `--head <branch>` to target the worktree branch from the main repo.
 </worktree_trap>
 
 <aliases>

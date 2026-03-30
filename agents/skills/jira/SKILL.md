@@ -8,7 +8,7 @@ description: Manage Jira issues, sprints, epics, and boards via jira-cli. Use wh
 </announcement>
 
 <auth>
-Token is managed by agenix and exported as JIRA_API_TOKEN. Run `jira init` for first-time setup — requires `--server` (Jira instance URL), `--login` (email), `--project` (default project key), `--board` (default board). Config lives at `~/.config/.jira/.config.yml`. Auth type is `bearer` for cloud API tokens. If commands fail with auth errors, verify the token is sourced (rebuild activates agenix secrets).
+Token is managed by agenix and exported as JIRA_API_TOKEN. Run `jira init` for first-time setup, which requires `--server` (Jira instance URL), `--login` (email), `--project` (default project key), `--board` (default board). Config lives at `~/.config/.jira/.config.yml`. Auth type is `bearer` for cloud API tokens. If commands fail with auth errors, verify the token is sourced (rebuild activates agenix secrets).
 </auth>
 
 <issues>
@@ -18,7 +18,7 @@ Listing: `jira issue list` with filters `--type`, `--status`, `--assignee`, `--l
 
 Moving: `jira issue move ISSUE-1 "In Progress"` transitions issues through workflow states. Add `--comment` and `--assignee` in the same call.
 
-Editing: `jira issue edit ISSUE-1 -s"New summary"` — same flags as create. Remove labels/components with minus prefix: `--label -urgent`. Use `--skip-notify` to avoid notification spam on batch updates.
+Editing: `jira issue edit ISSUE-1 -s"New summary"`, same flags as create. Remove labels/components with minus prefix: `--label -urgent`. Use `--skip-notify` to avoid notification spam on batch updates.
 </issues>
 
 <sprints>
@@ -30,7 +30,7 @@ Editing: `jira issue edit ISSUE-1 -s"New summary"` — same flags as create. Rem
 </epics>
 
 <scripting>
-For non-interactive automation always use `--no-input` to skip prompts. `--plain` gives parseable tables, `--raw` gives JSON, `--csv` gives CSV. `jira me` returns the configured username — useful in subshells: `jira issue list --assignee $(jira me)`. `jira open ISSUE-1` opens in browser, `--no-browser` prints the URL instead.
+For non-interactive automation always use `--no-input` to skip prompts. `--plain` gives parseable tables, `--raw` gives JSON, `--csv` gives CSV. `jira me` returns the configured username, useful in subshells: `jira issue list --assignee $(jira me)`. `jira open ISSUE-1` opens in browser, `--no-browser` prints the URL instead.
 </scripting>
 
 <worklog>

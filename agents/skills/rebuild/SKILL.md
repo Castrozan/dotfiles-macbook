@@ -14,7 +14,7 @@ Nix reads from git index, not working tree. Stage all modified .nix files before
 <execution>
 The `rebuild` script is packaged via `hosts/macbook/scripts/rebuild.nix` and available in PATH after first install. It sources nix-daemon.sh if needed, stages unstaged .nix files, and runs `sudo darwin-rebuild switch --flake ~/.dotfiles#macbook`. Pass extra args like `--dry-run` directly.
 
-The Bash tool inherits PATH from Claude Code's `env.PATH` setting in `settings.json`, which includes all Nix profile paths. Just run `rebuild` directly — no PATH export needed.
+The Bash tool inherits PATH from Claude Code's `env.PATH` setting in `settings.json`, which includes all Nix profile paths. Just run `rebuild` directly; no PATH export needed.
 
 For the first bootstrap (before the rebuild script or settings.json exist), run directly:
 ```
@@ -23,7 +23,7 @@ export PATH="/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH"
 </execution>
 
 <timeout_trap>
-Run rebuild in the background with short poll intervals. Never use process poll with timeout > 60000ms. A hung nix build can block for minutes — a single long poll eats the entire agent timeout budget and bricks the session. The rebuild output is verbose — use background execution and only check the final exit code + last few lines.
+Run rebuild in the background with short poll intervals. Never use process poll with timeout > 60000ms. A hung nix build can block for minutes, and a single long poll eats the entire agent timeout budget and bricks the session. The rebuild output is verbose, so use background execution and only check the final exit code + last few lines.
 </timeout_trap>
 
 <dry_run>

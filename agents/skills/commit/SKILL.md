@@ -12,11 +12,11 @@ Run in parallel: git status, git diff (cached and unstaged), git log (recent com
 </context_gathering>
 
 <analysis>
-For each changed file determine: what changed, why it matters (feature, bugfix, refactor, docs), scope (module, component, area), and impact (breaking changes, dependencies). Read actual diffs — never generate messages from filenames alone.
+For each changed file determine: what changed, why it matters (feature, bugfix, refactor, docs), scope (module, component, area), and impact (breaking changes, dependencies). Read actual diffs; never generate messages from filenames alone.
 </analysis>
 
 <format>
-Conventional commits: type(scope): subject. Imperative mood ("add" not "added"), lowercase, no period, max 72 chars. Include body when change is non-obvious, multiple related changes, or breaking. Match the repo's existing commit style — check recent log.
+Conventional commits: type(scope): subject. Imperative mood ("add" not "added"), lowercase, no period, max 72 chars. Include body when change is non-obvious, multiple related changes, or breaking. Match the repo's existing commit style by checking recent log.
 </format>
 
 <staging>

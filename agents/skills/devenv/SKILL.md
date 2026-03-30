@@ -8,7 +8,7 @@ devenv shell activates the environment interactively. devenv shell -- command ru
 </entering>
 
 <updating_trap>
-devenv update updates devenv.lock. Newer versions may introduce bugs — only update when necessary. If update breaks: restore previous lock from git or copy a working lock from another project.
+devenv update updates devenv.lock. Newer versions may introduce bugs, so only update when necessary. If update breaks: restore previous lock from git or copy a working lock from another project.
 </updating_trap>
 
 <cleaning>

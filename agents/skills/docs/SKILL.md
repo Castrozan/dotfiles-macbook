@@ -1,6 +1,6 @@
 ---
 name: docs
-description: Documentation policies and standards. Use when creating, updating, or reviewing any documentation — READMEs, TESTING.md, inline docs, file headers, or doc-related PRs.
+description: Documentation policies and standards. Use when creating, updating, or reviewing any documentation, including READMEs, TESTING.md, inline docs, file headers, or doc-related PRs.
 ---
 
 <principle>
@@ -24,7 +24,7 @@ Architecture decisions that affect multiple modules. Non-obvious constraints fro
 </when_docs_are_needed>
 
 <policy_documentation>
-A policy is not documentation of code — it is a statement of intent, goals, boundaries, and constraints that code must satisfy. Policies define what must be true and why without prescribing specific implementations. Dense prose that makes requisites and boundaries clear. Never describe current state, specific tools, exact commands, or implementation details — those belong in code. A good policy survives complete reimplementation of the system it governs. Policies live in CLAUDE.md or as NixOS assertions, never in separate docs files — separated policy documents rot because they are out of the path of work.
+A policy is not documentation of code; it is a statement of intent, goals, boundaries, and constraints that code must satisfy. Policies define what must be true and why without prescribing specific implementations. Dense prose that makes requisites and boundaries clear. Never describe current state, specific tools, exact commands, or implementation details, as those belong in code. A good policy survives complete reimplementation of the system it governs. Policies live in CLAUDE.md or as NixOS assertions, never in separate docs files, because separated policy documents rot because they are out of the path of work.
 </policy_documentation>
 
 <format>
