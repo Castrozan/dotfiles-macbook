@@ -13,6 +13,24 @@
       default-root-container-layout = "accordion";
       default-root-container-orientation = "auto";
 
+      after-startup-command = [
+        "workspace 1"
+        "layout accordion"
+        "workspace 2"
+        "layout accordion"
+        "workspace 3"
+        "layout accordion"
+        "workspace 4"
+        "layout accordion"
+        "workspace 5"
+        "layout accordion"
+        "workspace 6"
+        "layout accordion"
+        "workspace 7"
+        "layout accordion"
+        "workspace 1"
+      ];
+
       key-mapping.preset = "qwerty";
 
       on-focus-changed = [
