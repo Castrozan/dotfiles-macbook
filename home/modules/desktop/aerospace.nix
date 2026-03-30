@@ -1,4 +1,57 @@
-{ username, ... }:
+{ username, lib, ... }:
+let
+  workspaceNumbers = lib.range 1 7;
+
+  workspaceSwitchBindings = lib.listToAttrs (
+    map (n: {
+      name = "cmd-${toString n}";
+      value = "workspace ${toString n}";
+    }) workspaceNumbers
+  );
+
+  workspaceMoveBindings = lib.listToAttrs (
+    map (n: {
+      name = "cmd-shift-${toString n}";
+      value = [
+        "move-node-to-workspace ${toString n}"
+        "workspace ${toString n}"
+      ];
+    }) workspaceNumbers
+  );
+
+  workspaceAccordionStartupCommands =
+    lib.concatMap (n: [
+      "workspace ${toString n}"
+      "layout accordion"
+    ]) workspaceNumbers
+    ++ [ "workspace 1" ];
+
+  focusBindings = {
+    cmd-left = "focus left";
+    cmd-right = "focus right";
+    cmd-up = "focus up";
+    cmd-down = "focus down";
+  };
+
+  workspaceNavigationBindings = {
+    cmd-alt-left = "workspace prev";
+    cmd-alt-right = "workspace next";
+    cmd-alt-shift-left = [
+      "move-node-to-workspace prev"
+      "workspace prev"
+    ];
+    cmd-alt-shift-right = [
+      "move-node-to-workspace next"
+      "workspace next"
+    ];
+  };
+
+  applicationBindings = {
+    cmd-q = "exec-and-forget application-launcher";
+    cmd-tab = "exec-and-forget /usr/bin/python3 /Users/${username}/.dotfiles/hosts/macbook/scripts/workspace-window-switcher";
+    cmd-f = "fullscreen";
+  };
+in
 {
   programs.aerospace = {
     enable = true;
@@ -9,27 +62,10 @@
       enable-normalization-opposite-orientation-for-nested-containers = true;
 
       accordion-padding = 0;
-
       default-root-container-layout = "accordion";
       default-root-container-orientation = "auto";
 
-      after-startup-command = [
-        "workspace 1"
-        "layout accordion"
-        "workspace 2"
-        "layout accordion"
-        "workspace 3"
-        "layout accordion"
-        "workspace 4"
-        "layout accordion"
-        "workspace 5"
-        "layout accordion"
-        "workspace 6"
-        "layout accordion"
-        "workspace 7"
-        "layout accordion"
-        "workspace 1"
-      ];
+      after-startup-command = workspaceAccordionStartupCommands;
 
       key-mapping.preset = "qwerty";
 
@@ -55,66 +91,12 @@
         };
       };
 
-      mode.main.binding = {
-        cmd-1 = "workspace 1";
-        cmd-2 = "workspace 2";
-        cmd-3 = "workspace 3";
-        cmd-4 = "workspace 4";
-        cmd-5 = "workspace 5";
-        cmd-6 = "workspace 6";
-        cmd-7 = "workspace 7";
-
-        cmd-shift-1 = [
-          "move-node-to-workspace 1"
-          "workspace 1"
-        ];
-        cmd-shift-2 = [
-          "move-node-to-workspace 2"
-          "workspace 2"
-        ];
-        cmd-shift-3 = [
-          "move-node-to-workspace 3"
-          "workspace 3"
-        ];
-        cmd-shift-4 = [
-          "move-node-to-workspace 4"
-          "workspace 4"
-        ];
-        cmd-shift-5 = [
-          "move-node-to-workspace 5"
-          "workspace 5"
-        ];
-        cmd-shift-6 = [
-          "move-node-to-workspace 6"
-          "workspace 6"
-        ];
-        cmd-shift-7 = [
-          "move-node-to-workspace 7"
-          "workspace 7"
-        ];
-
-        cmd-q = "exec-and-forget application-launcher";
-        cmd-tab = "exec-and-forget /usr/bin/python3 /Users/${username}/.dotfiles/hosts/macbook/scripts/workspace-window-switcher";
-
-        cmd-f = "fullscreen";
-
-        cmd-left = "focus left";
-        cmd-right = "focus right";
-        cmd-up = "focus up";
-        cmd-down = "focus down";
-
-        ctrl-alt-left = "workspace prev";
-        ctrl-alt-right = "workspace next";
-
-        ctrl-alt-shift-left = [
-          "move-node-to-workspace prev"
-          "workspace prev"
-        ];
-        ctrl-alt-shift-right = [
-          "move-node-to-workspace next"
-          "workspace next"
-        ];
-      };
+      mode.main.binding =
+        workspaceSwitchBindings
+        // workspaceMoveBindings
+        // focusBindings
+        // workspaceNavigationBindings
+        // applicationBindings;
     };
   };
 }
