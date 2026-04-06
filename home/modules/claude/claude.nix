@@ -13,7 +13,7 @@ let
     };
     "aarch64-darwin" = {
       platform = "darwin-arm64";
-      sha256 = "sha256-ZCZ3JBnHWOcRRnJVgtZ/HdpCaHxpPIPe+a00IruB6/E=";
+      sha256 = "sha256-dDPXbT7F0iOjQOIdegXz1IHYmZnyKBExaK1dZMZv03Y=";
     };
   };
 

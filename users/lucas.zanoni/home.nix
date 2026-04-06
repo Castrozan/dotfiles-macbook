@@ -11,14 +11,7 @@
 
     ../../home/modules/agents
 
-    ../../home/modules/claude/claude.nix
-    ../../home/modules/claude/config.nix
-    ../../home/modules/claude/mcps
-    ../../home/modules/claude/skills.nix
-    ../../home/modules/claude/hooks.nix
-    ../../home/modules/claude/private.nix
-    ../../home/modules/claude/scripts.nix
-    ../../home/modules/claude/workspace-trust.nix
+    ../../home/modules/claude
 
     ../../home/modules/terminal/atuin.nix
     ../../home/modules/terminal/fish.nix
