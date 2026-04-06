@@ -12,5 +12,9 @@ in
       export PATH="${processUtilsPath}${pkgs.tmux}/bin:$PATH"
       ${builtins.readFile ./scripts/claude-restart}
     '')
+    (pkgs.writeShellScriptBin "claude-update-version" ''
+      export PATH="${pkgs.nix}/bin:${pkgs.git}/bin:$PATH"
+      exec ${pkgs.python312}/bin/python3 ${./scripts/claude-update-version} "$@"
+    '')
   ];
 }
