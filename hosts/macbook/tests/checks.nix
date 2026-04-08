@@ -12,6 +12,10 @@ let
   };
   inherit (helpers) mkEvalCheck;
 
+  symbolicHotKeysConfig = import ../symbolic-hotkeys.nix;
+  symbolicHotKeys =
+    symbolicHotKeysConfig.system.defaults.CustomUserPreferences."com.apple.symbolichotkeys".AppleSymbolicHotKeys;
+
   windowManagerConfig = import ../yabai.nix;
   windowManager = windowManagerConfig.system.defaults.CustomUserPreferences."com.apple.WindowManager";
 in
@@ -33,4 +37,9 @@ in
     mkEvalCheck "macbook-macos-option-accelerator-disabled"
       (!windowManager.EnableTilingOptionAccelerator)
       "macOS option-drag tiling accelerator must be disabled when a window manager is active";
+
+  macbook-macos-input-source-switching-disabled =
+    mkEvalCheck "macbook-macos-input-source-switching-disabled"
+      (!symbolicHotKeys."60".enabled && !symbolicHotKeys."61".enabled)
+      "input source switching hotkeys (60, 61) must be disabled so Ctrl+Space reaches terminal apps";
 }
