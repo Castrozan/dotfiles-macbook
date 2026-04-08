@@ -34,6 +34,16 @@ let
   };
 
   workspaceNavigationBindings = {
+    ctrl-alt-left = "workspace prev";
+    ctrl-alt-right = "workspace next";
+    ctrl-alt-shift-left = [
+      "move-node-to-workspace prev"
+      "workspace prev"
+    ];
+    ctrl-alt-shift-right = [
+      "move-node-to-workspace next"
+      "workspace next"
+    ];
     cmd-alt-left = "workspace prev";
     cmd-alt-right = "workspace next";
     cmd-alt-shift-left = [
