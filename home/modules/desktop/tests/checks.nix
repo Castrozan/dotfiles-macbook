@@ -51,51 +51,39 @@ in
       (aerospaceSettings.default-root-container-layout == "accordion")
       "default root container layout should be accordion";
 
-  domain-desktop-aerospace-workspace-prev-has-both-ctrl-and-cmd-alt =
-    mkEvalCheck "domain-desktop-aerospace-workspace-prev-has-both-ctrl-and-cmd-alt"
-      (
-        aerospaceBindings.ctrl-alt-left == "workspace prev"
-        && aerospaceBindings.cmd-alt-left == "workspace prev"
-      )
-      "workspace prev must be bound to both ctrl-alt-left and cmd-alt-left (karabiner only remaps ctrl to cmd for letters, not arrows)";
+  domain-desktop-aerospace-cmd-tab-not-bound =
+    mkEvalCheck "domain-desktop-aerospace-cmd-tab-not-bound" (!(aerospaceBindings ? cmd-tab))
+      "cmd-tab must not be bound in aerospace (karabiner intercepts it for workspace-switcher daemon)";
 
-  domain-desktop-aerospace-workspace-next-has-both-ctrl-and-cmd-alt =
-    mkEvalCheck "domain-desktop-aerospace-workspace-next-has-both-ctrl-and-cmd-alt"
-      (
-        aerospaceBindings.ctrl-alt-right == "workspace next"
-        && aerospaceBindings.cmd-alt-right == "workspace next"
-      )
-      "workspace next must be bound to both ctrl-alt-right and cmd-alt-right (karabiner only remaps ctrl to cmd for letters, not arrows)";
+  domain-desktop-aerospace-workspace-prev-bound =
+    mkEvalCheck "domain-desktop-aerospace-workspace-prev-bound"
+      (aerospaceBindings.cmd-alt-left == "workspace prev")
+      "workspace prev must be bound to cmd-alt-left";
+
+  domain-desktop-aerospace-workspace-next-bound =
+    mkEvalCheck "domain-desktop-aerospace-workspace-next-bound"
+      (aerospaceBindings.cmd-alt-right == "workspace next")
+      "workspace next must be bound to cmd-alt-right";
 
   domain-desktop-aerospace-move-workspace-prev-follows =
     mkEvalCheck "domain-desktop-aerospace-move-workspace-prev-follows"
       (
-        aerospaceBindings.ctrl-alt-shift-left == [
+        aerospaceBindings.cmd-alt-shift-left == [
           "move-node-to-workspace prev"
           "workspace prev"
         ]
-        &&
-          aerospaceBindings.cmd-alt-shift-left == [
-            "move-node-to-workspace prev"
-            "workspace prev"
-          ]
       )
-      "move-to-prev-and-follow must be bound to both ctrl-alt-shift-left and cmd-alt-shift-left";
+      "move-to-prev-and-follow must be bound to cmd-alt-shift-left";
 
   domain-desktop-aerospace-move-workspace-next-follows =
     mkEvalCheck "domain-desktop-aerospace-move-workspace-next-follows"
       (
-        aerospaceBindings.ctrl-alt-shift-right == [
+        aerospaceBindings.cmd-alt-shift-right == [
           "move-node-to-workspace next"
           "workspace next"
         ]
-        &&
-          aerospaceBindings.cmd-alt-shift-right == [
-            "move-node-to-workspace next"
-            "workspace next"
-          ]
       )
-      "move-to-next-and-follow must be bound to both ctrl-alt-shift-right and cmd-alt-shift-right";
+      "move-to-next-and-follow must be bound to cmd-alt-shift-right";
 
   domain-desktop-aerospace-all-workspaces-have-switch-binding =
     mkEvalCheck "domain-desktop-aerospace-all-workspaces-have-switch-binding"

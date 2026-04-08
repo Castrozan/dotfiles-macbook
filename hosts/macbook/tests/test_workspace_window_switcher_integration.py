@@ -4,6 +4,7 @@ import ctypes
 import ctypes.util
 import os
 import socket
+import subprocess
 import time
 
 SOCKET_PATH = "/tmp/workspace-switcher.sock"
@@ -104,6 +105,28 @@ def ensure_daemon_is_running():
     except (ConnectionRefusedError, FileNotFoundError):
         print("FAIL: cannot connect to daemon socket")
         return False
+
+
+def is_karabiner_grabber_running():
+    result = subprocess.run(
+        ["pgrep", "-x", "karabiner_grabber"],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
+def test_karabiner_grabber_is_running():
+    print("TEST: karabiner_grabber is running (required for Cmd+Tab interception)")
+
+    if not is_karabiner_grabber_running():
+        print("  FAIL: karabiner_grabber process not found")
+        print("        Cmd+Tab workspace switching depends on Karabiner intercepting")
+        print("        the keystroke. Rebuild to restore GC'd nix store paths.")
+        return False
+
+    print("  PASS")
+    return True
 
 
 def test_switcher_stays_active_during_mouse_movement():
@@ -280,6 +303,7 @@ def main():
         return
 
     all_tests = [
+        test_karabiner_grabber_is_running,
         test_mouse_movement_performance,
         test_command_latency_is_acceptable,
         test_switcher_stays_active_during_mouse_movement,
