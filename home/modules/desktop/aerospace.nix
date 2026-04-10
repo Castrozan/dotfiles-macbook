@@ -57,7 +57,6 @@ let
   };
 
   applicationBindings = {
-    cmd-q = "exec-and-forget /etc/profiles/per-user/${username}/bin/application-launcher";
     cmd-f = "fullscreen";
   };
 in

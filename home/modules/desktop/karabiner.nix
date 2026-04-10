@@ -114,6 +114,23 @@ let
             ];
           }
           {
+            description = "Cmd+Q launches application launcher via AeroSpace";
+            manipulators = [
+              {
+                type = "basic";
+                from = {
+                  key_code = "q";
+                  modifiers.mandatory = [ "command" ];
+                };
+                to = [
+                  {
+                    shell_command = "/etc/profiles/per-user/${username}/bin/application-launcher";
+                  }
+                ];
+              }
+            ];
+          }
+          {
             description = "Cmd+Tab/Cmd+Shift+Tab workspace window switcher via daemon";
             manipulators = [
               {
