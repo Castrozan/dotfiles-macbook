@@ -124,7 +124,7 @@ let
                 };
                 to = [
                   {
-                    shell_command = "/etc/profiles/per-user/${username}/bin/application-launcher";
+                    shell_command = "/etc/profiles/per-user/${config.home.username}/bin/application-launcher";
                   }
                 ];
               }
