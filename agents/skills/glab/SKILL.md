@@ -7,26 +7,30 @@ description: Manage GitLab merge requests, issues, pipelines, and code review vi
 "I'm using the glab skill to interact with GitLab."
 </announcement>
 
+<helper>
+All GitLab operations go through the helper script in this skill's `scripts/` directory. Run it with `--help` and `<subcommand> --help` to see available commands and flags. It handles auth sourcing, REST API calls, username-to-ID resolution, and URL-encoding. Never use raw `glab` CLI commands directly; they fail silently in multiple scenarios documented below.
+</helper>
+
 <auth>
-Token is managed by agenix and exported as GITLAB_TOKEN. The GitLab instance is git.coates.io, not gitlab.com. If auth fails, source secrets from the agenix-managed file in ~/.secrets/. The helper script auto-sources when GITLAB_TOKEN is missing.
+Token is managed by agenix and exported as GITLAB_TOKEN. The GitLab instance is git.coates.io, not gitlab.com. The helper auto-sources from `~/.secrets/source-secrets.sh` when GITLAB_TOKEN is missing. For direct API calls outside the helper, source that file first.
 </auth>
 
-<helper_script>
-The scripts/ directory contains a Python helper that wraps glab CLI and API. Prefer it over raw glab commands; it handles auth sourcing, uses the REST API directly (avoiding glab CLI quirks with non-interactive MR creation), resolves usernames to IDs, and URL-encodes branch names for protected branch operations. Run with `--help` to see available subcommands.
-</helper_script>
+<traps>
+Do not use `glab mr create --title`; it silently fails in non-interactive mode. The helper's mr-create uses the REST API and works reliably.
 
-<glab_cli_mr_creation_trap>
-`glab mr create --title` silently fails in non-interactive mode even when --no-editor is passed. The helper script bypasses this by calling the REST API directly. Use glab CLI only with `--fill` (auto-populates from commits) or for operations other than MR creation.
-</glab_cli_mr_creation_trap>
+Do not use `git push --delete` on protected branches; the pre-receive hook rejects it silently. The helper's delete-branch command uses the REST API which bypasses branch protection.
 
-<protected_branch_deletion_trap>
-`git push --delete` fails on protected branches with a pre-receive hook rejection. The helper's delete-branch command uses the REST API which bypasses branch protection rules. This is the only reliable way to delete release/* branches.
-</protected_branch_deletion_trap>
+Do not run glab or the helper from inside a git worktree; glab misdetects repo context. Run from the main repo directory, use `--head <branch>` to target worktree branches.
+</traps>
 
-<merge_request_updates>
-`glab mr update` works well for --assignee, --reviewer (prefix with + to add, ! to remove). For description updates with markdown or special characters, prefer the helper's mr-update command which avoids shell escaping issues by passing fields directly to the API.
-</merge_request_updates>
+<helper_gaps>
+The helper does not cover MR description updates with markdown (shell escaping corrupts them) or reading MR comments/discussions. For these, use the GitLab REST API directly with curl.
 
-<worktree_trap>
-glab misdetects repo context inside git worktrees. Run MR commands from the main repo directory. Use `--head <branch>` to target worktree branches from the main repo.
-</worktree_trap>
+The URL-encoded project path is `digital-production%2Fmcdca-tools%2Fmcdca-workspace`. Base URL: `https://git.coates.io/api/v4/projects/digital-production%2Fmcdca-tools%2Fmcdca-workspace`.
+
+For description updates: write markdown to a temp file, use `jq -n --arg desc "$(cat /tmp/desc.md)" '{description: $desc}'` to safely encode it, then PUT to `/merge_requests/:iid`.
+
+For MR comments: GET `/merge_requests/:iid/discussions?per_page=50`. Use `/discussions` not `/notes`; only discussions include inline code review comments with file path and line number in the `position` object. Filter out system notes with `n.get('system')`.
+
+Auth header for direct curl calls: `--header "PRIVATE-TOKEN: $GITLAB_TOKEN"` after sourcing `~/.secrets/source-secrets.sh`.
+</helper_gaps>
