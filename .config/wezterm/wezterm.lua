@@ -60,7 +60,6 @@ return {
   },
 
   keys = {
-    { key = 'Enter', mods = 'SHIFT', action = wezterm.action.SendString('\n') },
     { key = 'Enter', mods = 'CTRL', action = wezterm.action.SendString('\x1b[13;5u') },
     { key = 'Enter', mods = 'ALT', action = wezterm.action.SendString('\x1b[13;3u') },
     { key = 'Space', mods = 'CTRL', action = wezterm.action.SendString('\x00') },
