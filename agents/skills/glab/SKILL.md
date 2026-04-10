@@ -8,7 +8,7 @@ description: Manage GitLab merge requests, pipelines, and code review. Use when 
 </announcement>
 
 <harness>
-All GitLab operations go through `glab-harness.py` in this skill's `scripts/` directory. Run with `--help` and `<subcommand> --help` for flags and syntax. The harness uses direct HTTP to the GitLab API (no glab CLI dependency), resolves the project path from git remote origin, and auto-sources GITLAB_TOKEN from `~/.secrets/source-secrets.sh`. Do not use the `glab` CLI, raw curl, or direct API calls; the harness exists to prevent the silent failures and escaping issues those approaches cause.
+All GitLab operations go through `python3 <this skill's scripts/glab-harness.py>`. Run with `--help` and `<subcommand> --help` for flags and syntax. The Nix store copy lacks execute permission; always invoke with `python3`. The harness uses direct HTTP to the GitLab API (no glab CLI dependency), resolves the project path from git remote origin, and auto-sources GITLAB_TOKEN from `~/.secrets/source-secrets.sh`. Do not use the `glab` CLI, raw curl, or direct API calls; the harness exists to prevent the silent failures and escaping issues those approaches cause.
 
 Descriptions use `--description-file` (path to a file) instead of inline strings. Write markdown to a temp file, pass the path. This eliminates shell escaping corruption that breaks markdown, special characters, and code blocks.
 </harness>
