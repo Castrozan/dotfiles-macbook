@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -102,18 +103,14 @@ def sort_applications_by_frecency(application_names, history):
 
 def get_currently_running_application_names():
     result = subprocess.run(
-        ["ps", "-eo", "comm"],
+        ["lsappinfo", "visibleProcessList"],
         capture_output=True,
         text=True,
         timeout=5,
     )
     if result.returncode != 0:
         return set()
-    return {
-        line.strip().split("/")[-1].replace(".app", "")
-        for line in result.stdout.splitlines()
-        if ".app/" in line
-    }
+    return {name.replace("_", " ") for name in re.findall(r'"(\w+)"', result.stdout)}
 
 
 def build_display_line_for_application(application_name, running_application_names):
