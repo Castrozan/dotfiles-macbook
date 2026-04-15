@@ -100,24 +100,20 @@ def sort_applications_by_frecency(application_names, history):
     return sorted(application_names, key=frecency_sort_key)
 
 
-APPLESCRIPT_LIST_VISIBLE_APPLICATIONS = (
-    'tell application "System Events" to get name of '
-    "every application process whose background only is false"
-)
-
-
 def get_currently_running_application_names():
     result = subprocess.run(
-        ["osascript", "-e", APPLESCRIPT_LIST_VISIBLE_APPLICATIONS],
+        ["ps", "-eo", "comm"],
         capture_output=True,
         text=True,
         timeout=5,
     )
     if result.returncode != 0:
         return set()
-    return set(
-        name.strip() for name in result.stdout.strip().split(",") if name.strip()
-    )
+    return {
+        line.strip().split("/")[-1].replace(".app", "")
+        for line in result.stdout.splitlines()
+        if ".app/" in line
+    }
 
 
 def build_display_line_for_application(application_name, running_application_names):
@@ -126,16 +122,21 @@ def build_display_line_for_application(application_name, running_application_nam
     return f"{NOT_RUNNING_APPLICATION_INDICATOR} {application_name}"
 
 
-def present_application_chooser(display_lines):
-    chooser_input = "\n".join(display_lines)
-    result = subprocess.run(
+def start_chooser_process():
+    return subprocess.Popen(
         ["choose"],
-        input=chooser_input,
-        capture_output=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
     )
-    selected = result.stdout.strip()
-    if result.returncode != 0 or not selected:
+
+
+def finish_chooser_with_display_lines(chooser_process, display_lines):
+    chooser_input = "\n".join(display_lines)
+    stdout, _ = chooser_process.communicate(input=chooser_input)
+    selected = stdout.strip()
+    if chooser_process.returncode != 0 or not selected:
         return None
     return selected
 
@@ -209,6 +210,8 @@ def open_application_with_new_window_if_running(application_name):
 
 def main():
     ensure_nix_packages_in_path()
+    chooser_process = start_chooser_process()
+
     applications = discover_installed_applications()
     history = load_launch_history()
     sorted_applications = sort_applications_by_frecency(applications, history)
@@ -220,7 +223,9 @@ def main():
     ]
     display_line_to_application_name = dict(zip(display_lines, sorted_applications))
 
-    selected_display_line = present_application_chooser(display_lines)
+    selected_display_line = finish_chooser_with_display_lines(
+        chooser_process, display_lines
+    )
     if not selected_display_line:
         return
 
