@@ -54,6 +54,12 @@ let
   bashrcContent = builtins.readFile ../shell/.bashrc;
   bashrcHasNoHardcodedSources = !(lib.hasInfix ". $HOME/.dotfiles/" bashrcContent);
 
+  weztermLuaContent = builtins.readFile ../../../../.config/wezterm/wezterm.lua;
+
+  weztermHasCsiUKeyEncoding = lib.hasInfix "enable_csi_u_key_encoding = true" weztermLuaContent;
+
+  weztermShiftEnterNotOverridden = !(lib.hasInfix "key = 'Enter', mods = 'SHIFT'" weztermLuaContent);
+
   screensaverContent = builtins.readFile ../shell/screensaver.sh;
   tmuxMainContent = builtins.readFile ../shell/tmux_main.sh;
   bashrcWithDependenciesFirst = builtins.concatStringsSep "\n" [
@@ -118,4 +124,12 @@ in
   domain-terminal-yazi-enabled =
     mkEvalCheck "domain-terminal-yazi-enabled" cfg.programs.yazi.enable
       "yazi file manager should be enabled";
+
+  domain-terminal-wezterm-csi-u-enabled =
+    mkEvalCheck "domain-terminal-wezterm-csi-u-enabled" weztermHasCsiUKeyEncoding
+      "wezterm must have enable_csi_u_key_encoding = true for proper modifier key sequences";
+
+  domain-terminal-wezterm-shift-enter-not-overridden =
+    mkEvalCheck "domain-terminal-wezterm-shift-enter-not-overridden" weztermShiftEnterNotOverridden
+      "wezterm must not override Shift+Enter; CSI-u encoding handles it for Claude Code newlines";
 }
