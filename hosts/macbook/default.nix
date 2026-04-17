@@ -86,6 +86,7 @@
     casks = [
       "alt-tab"
       "brave-browser"
+      "dbeaver-community"
       "docker"
       "karabiner-elements"
       "obsidian"
