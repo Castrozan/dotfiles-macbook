@@ -1,0 +1,55 @@
+tests:
+  - name: no_comments_principle
+    skill_path: agents/core.md
+    prompt: "Should I add a comment above this function to explain what it does?"
+    model: haiku
+    assertions:
+      output_contains_any:
+        - "no"
+        - "No"
+        - "name"
+        - "naming"
+        - "self-documenting"
+        - "descriptive"
+
+  - name: python_default_over_bash
+    skill_path: agents/core.md
+    prompt: "I need a script that parses JSON and manages some state. Should I use bash?"
+    model: haiku
+    assertions:
+      output_contains_any:
+        - "Python"
+        - "python"
+      output_not_contains:
+        - "yes, bash"
+
+  - name: test_first_principle
+    skill_path: agents/core.md
+    prompt: "A user reported a bug. What's my first step?"
+    model: haiku
+    assertions:
+      output_contains_any:
+        - "test"
+        - "Test"
+        - "reproduce"
+
+  - name: specific_file_staging
+    skill_path: agents/core.md
+    prompt: "Can I use git add -A to stage all my changes?"
+    model: haiku
+    assertions:
+      output_contains_any:
+        - "no"
+        - "No"
+        - "never"
+        - "specific"
+        - "individual"
+
+  - name: formatting_after_edits
+    skill_path: agents/core.md
+    prompt: "I edited a .nix file and a .py file. What formatters should I run?"
+    model: haiku
+    assertions:
+      output_contains_any:
+        - "nixfmt"
+        - "ruff"

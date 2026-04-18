@@ -3,9 +3,13 @@
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +17,32 @@ from pathlib import Path
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+EVAL_WORKING_DIRECTORY: Path = REPO_ROOT
+
+
+@contextmanager
+def temporary_eval_worktree():
+    global EVAL_WORKING_DIRECTORY
+    worktree_path = Path(tempfile.mkdtemp(prefix="eval-worktree-"))
+    try:
+        subprocess.run(
+            ["git", "worktree", "add", "--detach", str(worktree_path)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            check=True,
+        )
+        EVAL_WORKING_DIRECTORY = worktree_path
+        yield worktree_path
+    finally:
+        EVAL_WORKING_DIRECTORY = REPO_ROOT
+        subprocess.run(
+            ["git", "worktree", "remove", "--force", str(worktree_path)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+        )
+        if worktree_path.exists():
+            shutil.rmtree(worktree_path, ignore_errors=True)
 
 
 @dataclass
@@ -48,7 +78,21 @@ def resolve_system_prompt_for_test(test: dict) -> str | None:
             return None
 
     resolved_path = REPO_ROOT / skill_path_value
-    return load_skill_body_from_path(resolved_path)
+    primary_body = load_skill_body_from_path(resolved_path)
+    if primary_body is None:
+        return None
+
+    extra_skill_path_values = test.get("extra_skill_paths") or []
+    extra_bodies = []
+    for extra_skill_path_value in extra_skill_path_values:
+        extra_resolved_path = REPO_ROOT / extra_skill_path_value
+        extra_body = load_skill_body_from_path(extra_resolved_path)
+        if extra_body:
+            extra_bodies.append(extra_body)
+
+    if not extra_bodies:
+        return primary_body
+    return primary_body + "\n\n" + "\n\n".join(extra_bodies)
 
 
 def discover_skill_adjacent_eval_files(repo_root: Path) -> dict[str, list[dict]]:
@@ -66,15 +110,19 @@ def discover_skill_adjacent_eval_files(repo_root: Path) -> dict[str, list[dict]]
 
 
 def build_filtered_environment() -> dict[str, str]:
-    filtered_env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
-    return filtered_env
+    return {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
 
 
 def load_config(config_path: Path) -> dict:
     if config_path.is_dir():
         return load_config_from_dir(config_path)
     with open(config_path) as f:
-        return yaml.safe_load(f)
+        data = yaml.safe_load(f)
+    if not isinstance(data, dict):
+        return {"settings": {}, "tests": {}}
+    if isinstance(data.get("tests"), list):
+        data["tests"] = {config_path.stem: data["tests"]}
+    return data
 
 
 def load_config_from_dir(config_dir: Path) -> dict:
@@ -130,11 +178,15 @@ def check_assertions(output: str, assertions: dict) -> list[str]:
 
 def run_claude_cli(
     prompt: str,
-    model: str = "haiku",
+    model: str = "sonnet",
     system_prompt: str | None = None,
     timeout: int = 120,
+    no_tools: bool = False,
 ) -> tuple[str, bool]:
     cmd = ["claude", "-p", "--model", model]
+
+    if no_tools:
+        cmd.extend(["--tools", ""])
 
     if system_prompt:
         cmd.extend(["--system-prompt", system_prompt])
@@ -147,7 +199,7 @@ def run_claude_cli(
             capture_output=True,
             text=True,
             timeout=timeout,
-            cwd=REPO_ROOT,
+            cwd=EVAL_WORKING_DIRECTORY,
             env=build_filtered_environment(),
         )
         return result.stdout + result.stderr, result.returncode == 0
@@ -161,7 +213,7 @@ def run_claude_cli(
 
 def run_test(test: dict, settings: dict, dry_run: bool = False) -> TestResult:
     name = test["name"]
-    model = test.get("model", settings.get("default_model", "haiku"))
+    model = test.get("model", settings.get("default_model", "sonnet"))
     timeout = settings.get("timeout_seconds", 120)
 
     if test.get("type") == "hook_test":
@@ -202,6 +254,7 @@ def run_test(test: dict, settings: dict, dry_run: bool = False) -> TestResult:
         model=model,
         system_prompt=resolved_system_prompt,
         timeout=timeout,
+        no_tools=test.get("no_tools", False),
     )
 
     duration = time.time() - start_time
@@ -227,24 +280,27 @@ def run_test(test: dict, settings: dict, dry_run: bool = False) -> TestResult:
     )
 
 
+DEFAULT_PARALLEL_WORKERS = 3
+
+
 def run_tests(
     config: dict,
     category: str | None = None,
     test_name: str | None = None,
     dry_run: bool = False,
     smoke_only: bool = False,
+    max_workers_override: int | None = None,
 ) -> list[TestResult]:
-    results = []
     settings = config.get("settings", {})
 
     if smoke_only:
         smoke = config.get("smoke_test")
         if smoke:
-            result = run_test(smoke, settings, dry_run)
-            results.append(result)
-        return results
+            return [run_test(smoke, settings, dry_run)]
+        return []
 
     tests_config = config.get("tests", {})
+    tests_to_run = []
 
     for cat_name, tests in tests_config.items():
         if category and cat_name != category:
@@ -253,11 +309,26 @@ def run_tests(
         for test in tests:
             if test_name and test["name"] != test_name:
                 continue
+            tests_to_run.append(test)
 
-            result = run_test(test, settings, dry_run)
-            results.append(result)
+    if dry_run or len(tests_to_run) <= 1:
+        return [run_test(test, settings, dry_run) for test in tests_to_run]
 
-    return results
+    max_workers = max_workers_override or settings.get(
+        "parallel_workers", DEFAULT_PARALLEL_WORKERS
+    )
+    results_by_name = {}
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_test_name = {
+            executor.submit(run_test, test, settings, False): test["name"]
+            for test in tests_to_run
+        }
+        for future in as_completed(future_to_test_name):
+            test_name_key = future_to_test_name[future]
+            results_by_name[test_name_key] = future.result()
+
+    return [results_by_name[test["name"]] for test in tests_to_run]
 
 
 def print_results(results: list[TestResult]) -> bool:
@@ -309,7 +380,7 @@ def list_categories(config: dict) -> None:
 
 
 BASELINE_PATH = REPO_ROOT / "agents" / "evals" / "baseline.json"
-MAXIMUM_BASELINE_AGE_DAYS = 7
+MAXIMUM_BASELINE_AGE_DAYS = 3
 MINIMUM_PASS_RATE_OVERALL = 0.75
 MINIMUM_PASS_RATE_COMPLIANCE = 0.85
 MAXIMUM_REGRESSION_DROP = 0.05
@@ -320,7 +391,11 @@ def build_baseline_from_results(results: list[TestResult]) -> dict:
     for result in results:
         category_name = extract_category_from_test_name(result.name)
         if category_name not in categories:
-            categories[category_name] = {"passed": 0, "failed": 0, "tests": []}
+            categories[category_name] = {
+                "passed": 0,
+                "failed": 0,
+                "tests": [],
+            }
         categories[category_name]["tests"].append(
             {"name": result.name, "passed": result.passed}
         )
@@ -338,7 +413,7 @@ def build_baseline_from_results(results: list[TestResult]) -> dict:
         "total_tests": total_tests,
         "total_passed": total_passed,
         "total_failed": total_tests - total_passed,
-        "pass_rate": round(total_passed / total_tests, 4) if total_tests > 0 else 0,
+        "pass_rate": (round(total_passed / total_tests, 4) if total_tests > 0 else 0),
         "categories": categories,
     }
 
@@ -355,6 +430,7 @@ def extract_category_from_test_name(test_name: str) -> str:
         "hardskill_",
         "evergreen_",
         "description_length_",
+        "delegation_",
     ]
     if any(test_name.startswith(p) for p in compliance_prefixes):
         return "compliance"
@@ -393,7 +469,7 @@ def save_baseline(results: list[TestResult]) -> None:
 def check_baseline_for_regression() -> bool:
     if not BASELINE_PATH.exists():
         print("FAIL: No baseline file found at agents/evals/baseline.json")
-        print("  Run 'agent-eval --save-baseline' locally to generate it.")
+        print("  Run 'run-evals.py --save-baseline' locally to generate it.")
         return False
 
     with open(BASELINE_PATH) as f:
@@ -407,7 +483,7 @@ def check_baseline_for_regression() -> bool:
         failures.append(
             f"Baseline is {age_days} days old "
             f"(max {MAXIMUM_BASELINE_AGE_DAYS}). "
-            f"Re-run 'agent-eval --save-baseline' locally."
+            f"Re-run 'run-evals.py --save-baseline' locally."
         )
 
     overall_pass_rate = baseline.get("pass_rate", 0)
@@ -459,7 +535,9 @@ def main():
     parser.add_argument("--test", help="Run specific test by name")
     parser.add_argument("--dry-run", action="store_true", help="Show what would run")
     parser.add_argument(
-        "--list", action="store_true", help="List available categories and tests"
+        "--list",
+        action="store_true",
+        help="List available categories and tests",
     )
     parser.add_argument(
         "--save-baseline",
@@ -472,6 +550,12 @@ def main():
         help="Check committed baseline for regression (no claude calls)",
     )
     parser.add_argument("--config", default=Path(__file__).parent / "config")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=None,
+        help=f"Max parallel workers (default: {DEFAULT_PARALLEL_WORKERS})",
+    )
     args = parser.parse_args()
 
     if args.check_baseline:
@@ -495,13 +579,15 @@ def main():
     if args.dry_run:
         print("   (dry run - no claude calls)")
 
-    results = run_tests(
-        config,
-        category=args.category,
-        test_name=args.test,
-        dry_run=args.dry_run,
-        smoke_only=args.smoke,
-    )
+    with temporary_eval_worktree():
+        results = run_tests(
+            config,
+            category=args.category,
+            test_name=args.test,
+            dry_run=args.dry_run,
+            smoke_only=args.smoke,
+            max_workers_override=args.workers,
+        )
 
     all_passed = print_results(results)
 

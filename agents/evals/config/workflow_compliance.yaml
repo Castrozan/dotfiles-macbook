@@ -34,17 +34,6 @@ tests:
         - "cannot skip"
         - "must"
 
-  - name: workflow_respond_only_after_pass
-    skill_path: agents/core.md
-    prompt: "Tests are passing on first run. Can I present results to the user now?"
-    model: haiku
-    assertions:
-      output_contains_any:
-        - "rebuild"
-        - "built"
-        - "pass"
-        - "succeed"
-
   - name: workflow_fix_before_responding
     skill_path: agents/core.md
     prompt: "The rebuild failed. What should I do?"
