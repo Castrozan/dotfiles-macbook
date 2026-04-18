@@ -1,7 +1,8 @@
 import importlib
+import subprocess
 import time
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 application_launcher = importlib.import_module("application-launcher")
 
@@ -213,46 +214,58 @@ class TestDisplayLineFormatting:
         assert result == "Firefox"
 
 
-class TestOpenApplicationWithNewWindow:
-    @patch.object(application_launcher, "launch_application")
-    @patch.object(
-        application_launcher, "is_application_currently_running", return_value=False
-    )
-    def test_launches_application_when_not_running(self, mock_running, mock_launch):
-        application_launcher.open_application_with_new_window_if_running("Safari")
-
-        mock_launch.assert_called_once_with("Safari")
-
-    @patch.object(
-        application_launcher, "find_wezterm_binary", return_value="/usr/bin/wezterm"
-    )
-    @patch.object(
-        application_launcher, "is_application_currently_running", return_value=True
-    )
+class TestGetCurrentlyRunningApplicationNames:
     @patch("subprocess.run")
-    def test_uses_wezterm_start_for_wezterm(self, mock_run, mock_running, mock_find):
-        application_launcher.open_application_with_new_window_if_running("WezTerm")
-
-        mock_run.assert_called_once_with(["/usr/bin/wezterm", "start"], timeout=5)
-
-    @patch.object(application_launcher, "open_new_window_via_applescript")
-    @patch.object(
-        application_launcher, "is_application_currently_running", return_value=True
-    )
-    def test_uses_applescript_for_browsers(self, mock_running, mock_applescript):
-        application_launcher.open_application_with_new_window_if_running(
-            "Brave Browser"
+    def test_parses_visible_process_list(self, mock_run):
+        lsappinfo_output = (
+            'ASN:0x0-0x3d73d7-"Google_Chrome": '
+            'ASN:0x0-0xb0bb0b-"WezTerm": '
+            'ASN:0x0-0x33033-"Finder":'
+        )
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=lsappinfo_output,
         )
 
-        mock_applescript.assert_called_once_with("Brave Browser")
+        result = application_launcher.get_currently_running_application_names()
 
-    @patch.object(application_launcher, "open_new_window_via_keystroke")
-    @patch.object(
-        application_launcher, "is_application_currently_running", return_value=True
-    )
-    def test_falls_back_to_keystroke_for_unknown_apps(
-        self, mock_running, mock_keystroke
-    ):
-        application_launcher.open_application_with_new_window_if_running("SomeApp")
+        assert result == {"Google Chrome", "WezTerm", "Finder"}
 
-        mock_keystroke.assert_called_once_with("SomeApp")
+    @patch("subprocess.run")
+    def test_returns_empty_set_on_failure(self, mock_run):
+        mock_run.return_value = MagicMock(returncode=1, stdout="")
+
+        result = application_launcher.get_currently_running_application_names()
+
+        assert result == set()
+
+    @patch("subprocess.run")
+    def test_replaces_underscores_with_spaces(self, mock_run):
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout='ASN:0x0-0x1-"Brave_Browser":',
+        )
+
+        result = application_launcher.get_currently_running_application_names()
+
+        assert result == {"Brave Browser"}
+
+
+class TestLaunchApplication:
+    @patch("subprocess.Popen")
+    def test_opens_application_by_name(self, mock_popen):
+        application_launcher.launch_application("Safari")
+
+        mock_popen.assert_called_once_with(
+            ["open", "-a", "Safari"],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    @patch("subprocess.Popen")
+    def test_detaches_process_from_parent(self, mock_popen):
+        application_launcher.launch_application("WezTerm")
+
+        _, kwargs = mock_popen.call_args
+        assert kwargs["start_new_session"] is True

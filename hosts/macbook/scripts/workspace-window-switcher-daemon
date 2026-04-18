@@ -24,7 +24,7 @@ OVERLAY_CORNER_RADIUS = 14
 CARD_CORNER_RADIUS = 10
 TITLE_FONT_SIZE = 11
 SELECTION_BORDER_WIDTH = 3
-COMMIT_TIMEOUT_SECONDS = 3.0
+COMMIT_TIMEOUT_SECONDS = 10.0
 
 
 class AeroSpaceWindowProvider:
@@ -85,9 +85,7 @@ class AeroSpaceWindowProvider:
             return []
 
     def get_focused_window_id(self):
-        stdout = self._send_ipc_command(
-            ["list-windows", "--focused", "--json"]
-        )
+        stdout = self._send_ipc_command(["list-windows", "--focused", "--json"])
         if stdout is None:
             return None
         try:
@@ -97,9 +95,7 @@ class AeroSpaceWindowProvider:
             return None
 
     def focus_window(self, window_id):
-        self._send_ipc_command(
-            ["focus", "--window-id", str(window_id)]
-        )
+        self._send_ipc_command(["focus", "--window-id", str(window_id)])
 
 
 class AppIconProvider:
@@ -285,9 +281,7 @@ class SwitcherOverlayPanel:
             card_view.layer().setBackgroundColor_(
                 AppKit.NSColor.whiteColor().colorWithAlphaComponent_(0.05).CGColor()
             )
-            border_view.layer().setBorderColor_(
-                AppKit.NSColor.clearColor().CGColor()
-            )
+            border_view.layer().setBorderColor_(AppKit.NSColor.clearColor().CGColor())
 
         text_alpha = 1.0 if is_selected else 0.6
         font_weight = (
@@ -299,9 +293,7 @@ class SwitcherOverlayPanel:
                     AppKit.NSColor.whiteColor().colorWithAlphaComponent_(text_alpha)
                 )
                 subview.setFont_(
-                    AppKit.NSFont.systemFontOfSize_weight_(
-                        TITLE_FONT_SIZE, font_weight
-                    )
+                    AppKit.NSFont.systemFontOfSize_weight_(TITLE_FONT_SIZE, font_weight)
                 )
 
     def _center_on_main_screen(self):
@@ -415,9 +407,7 @@ class WindowSwitcherStateMachine:
         self._fetching_windows = True
         self._commit_requested_before_ready = False
         self._pending_direction_changes = initial_direction
-        threading.Thread(
-            target=self._fetch_windows_from_aerospace, daemon=True
-        ).start()
+        threading.Thread(target=self._fetch_windows_from_aerospace, daemon=True).start()
 
     def _fetch_windows_from_aerospace(self):
         windows = self._aerospace.get_focused_workspace_windows()
@@ -500,9 +490,7 @@ class CommandSocketServer:
         self._mru_tracker = mru_tracker
 
     def start_accepting_connections(self):
-        server_thread = threading.Thread(
-            target=self._run_server_loop, daemon=True
-        )
+        server_thread = threading.Thread(target=self._run_server_loop, daemon=True)
         server_thread.start()
 
     def _run_server_loop(self):
@@ -512,17 +500,19 @@ class CommandSocketServer:
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server_socket.bind(SOCKET_PATH)
         os.chmod(SOCKET_PATH, 0o666)
-        server_socket.listen(5)
+        server_socket.listen(32)
 
         while True:
             try:
                 client_connection, _ = server_socket.accept()
+                client_connection.settimeout(0.5)
                 try:
                     raw_command = client_connection.recv(1024).decode().strip()
                 finally:
                     client_connection.close()
-                self._dispatch_command_to_main_thread(raw_command)
-            except Exception:
+                if raw_command:
+                    self._dispatch_command_to_main_thread(raw_command)
+            except (OSError, UnicodeDecodeError):
                 pass
 
     def _dispatch_command_to_main_thread(self, command):
@@ -557,9 +547,7 @@ def main():
     remove_stale_active_flag_on_startup()
 
     application = AppKit.NSApplication.sharedApplication()
-    application.setActivationPolicy_(
-        AppKit.NSApplicationActivationPolicyAccessory
-    )
+    application.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
 
     aerospace_provider = AeroSpaceWindowProvider()
     overlay_panel = SwitcherOverlayPanel()

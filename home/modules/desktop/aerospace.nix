@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, ... }:
 let
   workspaceNumbers = lib.range 1 7;
 
@@ -78,7 +78,7 @@ in
       key-mapping.preset = "qwerty";
 
       on-focus-changed = [
-        ''exec-and-forget echo "focus:$AEROSPACE_WINDOW_ID" | /usr/bin/nc -U /tmp/workspace-switcher.sock''
+        ''exec-and-forget /etc/profiles/per-user/${config.home.username}/bin/workspace-switcher-send "focus:$AEROSPACE_WINDOW_ID"''
       ];
       on-focused-monitor-changed = [ "move-mouse monitor-lazy-center" ];
 

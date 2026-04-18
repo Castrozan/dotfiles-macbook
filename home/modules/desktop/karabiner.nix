@@ -143,7 +143,9 @@ let
                   ];
                 };
                 to = [
-                  { shell_command = "echo prev | /usr/bin/nc -w 1 -U /tmp/workspace-switcher.sock"; }
+                  {
+                    shell_command = "/etc/profiles/per-user/${config.home.username}/bin/workspace-switcher-send prev";
+                  }
                 ];
               }
               {
@@ -153,7 +155,9 @@ let
                   modifiers.mandatory = [ "command" ];
                 };
                 to = [
-                  { shell_command = "echo next | /usr/bin/nc -w 1 -U /tmp/workspace-switcher.sock"; }
+                  {
+                    shell_command = "/etc/profiles/per-user/${config.home.username}/bin/workspace-switcher-send next";
+                  }
                 ];
               }
             ];
@@ -168,7 +172,7 @@ let
                   to = [ { key_code = commandKey; } ];
                   to_after_key_up = [
                     {
-                      shell_command = "[ -f /tmp/workspace-switcher.active ] && echo commit | /usr/bin/nc -w 1 -U /tmp/workspace-switcher.sock";
+                      shell_command = "[ -f /tmp/workspace-switcher.active ] && /etc/profiles/per-user/${config.home.username}/bin/workspace-switcher-send commit";
                     }
                   ];
                 })
