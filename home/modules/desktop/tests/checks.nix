@@ -32,19 +32,7 @@ let
   aerospaceBindings = aerospaceCfg.programs.aerospace.userSettings.mode.main.binding;
   aerospaceSettings = aerospaceCfg.programs.aerospace.userSettings;
 
-  karabinerCfg = helpers.homeManagerTestConfiguration [
-    ../karabiner.nix
-  ];
-
-  karabinerActivationData = karabinerCfg.home.activation.copyKarabinerConfig.data;
-  karabinerJsonStorePath = builtins.head (
-    builtins.match ".*cp -f ([^ ]+) .*" (
-      builtins.replaceStrings [ "\n" ] [ " " ] karabinerActivationData
-    )
-  );
-  karabinerJsonContent = builtins.readFile karabinerJsonStorePath;
-  karabinerParsedConfig = builtins.fromJSON karabinerJsonContent;
-  karabinerRules = (builtins.head karabinerParsedConfig.profiles).complex_modifications.rules;
+  karabinerRules = import ../karabiner-rules.nix { username = "test"; };
 in
 {
   domain-desktop-fontconfig-enabled =
