@@ -35,15 +35,17 @@ let
     cmd-down = "focus down";
   };
 
+  totalWorkspaces = toString (builtins.length workspaceNumbers);
+
   workspaceNavigationBindings = {
-    ctrl-alt-left = "exec-and-forget ${userBinPath}/workspace-navigate prev";
-    ctrl-alt-right = "exec-and-forget ${userBinPath}/workspace-navigate next";
-    ctrl-alt-shift-left = "exec-and-forget ${userBinPath}/workspace-navigate prev --move-window";
-    ctrl-alt-shift-right = "exec-and-forget ${userBinPath}/workspace-navigate next --move-window";
-    cmd-alt-left = "exec-and-forget ${userBinPath}/workspace-navigate prev";
-    cmd-alt-right = "exec-and-forget ${userBinPath}/workspace-navigate next";
-    cmd-alt-shift-left = "exec-and-forget ${userBinPath}/workspace-navigate prev --move-window";
-    cmd-alt-shift-right = "exec-and-forget ${userBinPath}/workspace-navigate next --move-window";
+    ctrl-alt-left = "exec-and-forget ${userBinPath}/workspace-navigate prev ${totalWorkspaces}";
+    ctrl-alt-right = "exec-and-forget ${userBinPath}/workspace-navigate next ${totalWorkspaces}";
+    ctrl-alt-shift-left = "exec-and-forget ${userBinPath}/workspace-navigate prev ${totalWorkspaces} --move-window";
+    ctrl-alt-shift-right = "exec-and-forget ${userBinPath}/workspace-navigate next ${totalWorkspaces} --move-window";
+    cmd-alt-left = "exec-and-forget ${userBinPath}/workspace-navigate prev ${totalWorkspaces}";
+    cmd-alt-right = "exec-and-forget ${userBinPath}/workspace-navigate next ${totalWorkspaces}";
+    cmd-alt-shift-left = "exec-and-forget ${userBinPath}/workspace-navigate prev ${totalWorkspaces} --move-window";
+    cmd-alt-shift-right = "exec-and-forget ${userBinPath}/workspace-navigate next ${totalWorkspaces} --move-window";
   };
 
   applicationBindings = {

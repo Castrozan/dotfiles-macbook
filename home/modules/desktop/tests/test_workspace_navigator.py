@@ -52,14 +52,17 @@ class TestParseMonitorsWithNames:
         assert result == {"1": "Built-in Retina Display", "2": "RG241Y"}
 
 
-def make_aerospace_mock(focused_workspace, monitors, workspace_to_monitor):
-    all_workspaces = sorted(workspace_to_monitor.keys())
+def make_aerospace_mock(
+    focused_workspace, monitors, workspace_to_monitor, visible_workspaces=None
+):
+    if visible_workspaces is None:
+        visible_workspaces = [focused_workspace]
 
     def mock_run_aerospace_command(*args):
         if args == ("list-workspaces", "--focused"):
             return str(focused_workspace)
-        if args == ("list-workspaces", "--all"):
-            return "\n".join(str(w) for w in all_workspaces)
+        if args == ("list-workspaces", "--visible"):
+            return "\n".join(str(w) for w in visible_workspaces)
         if args == ("list-monitors",):
             return "\n".join(
                 f"{monitor_id} | {monitor_name}"
@@ -98,7 +101,7 @@ class TestSingleMonitorNavigation:
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "next"]),
+            patch("sys.argv", ["workspace-navigate", "next", "7"]),
         ):
             workspace_navigator.main()
 
@@ -110,7 +113,7 @@ class TestSingleMonitorNavigation:
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "next"]),
+            patch("sys.argv", ["workspace-navigate", "next", "7"]),
         ):
             workspace_navigator.main()
 
@@ -119,13 +122,15 @@ class TestSingleMonitorNavigation:
 
 
 class TestMultiMonitorNavigation:
-    def test_moves_workspace_from_other_monitor_to_focused(self):
-        mock = make_aerospace_mock(4, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES)
+    def test_moves_hidden_workspace_from_other_monitor_to_focused(self):
+        mock = make_aerospace_mock(
+            4, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES, visible_workspaces=[3, 4]
+        )
         with (
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "next"]),
+            patch("sys.argv", ["workspace-navigate", "next", "7"]),
         ):
             workspace_navigator.main()
 
@@ -135,12 +140,14 @@ class TestMultiMonitorNavigation:
         mock_cmd.assert_any_call("workspace", "5")
 
     def test_skips_move_when_target_already_on_focused_monitor(self):
-        mock = make_aerospace_mock(3, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES)
+        mock = make_aerospace_mock(
+            3, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES, visible_workspaces=[3, 4]
+        )
         with (
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "prev"]),
+            patch("sys.argv", ["workspace-navigate", "prev", "7"]),
         ):
             workspace_navigator.main()
 
@@ -148,17 +155,45 @@ class TestMultiMonitorNavigation:
             assert invocation[0][0] != "move-workspace-to-monitor"
         mock_cmd.assert_any_call("workspace", "2")
 
-    def test_wraps_around_and_moves_across_monitors(self):
-        mock = make_aerospace_mock(7, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES)
+    def test_wraps_around_skipping_other_monitor_visible_workspace(self):
+        mock = make_aerospace_mock(
+            7, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES, visible_workspaces=[7, 4]
+        )
         with (
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "next"]),
+            patch("sys.argv", ["workspace-navigate", "next", "7"]),
         ):
             workspace_navigator.main()
 
         mock_cmd.assert_any_call("workspace", "1")
+
+
+DUAL_MONITOR_SPARSE_WORKSPACES = {
+    3: "1",
+    4: "2",
+}
+
+
+class TestDualMonitorSkipsVisibleWorkspaceOnOtherMonitor:
+    def test_prev_from_external_skips_built_in_visible_and_goes_to_empty_workspace(
+        self,
+    ):
+        mock = make_aerospace_mock(
+            4, DUAL_MONITORS, DUAL_MONITOR_SPARSE_WORKSPACES, visible_workspaces=[3, 4]
+        )
+        with (
+            patch.object(
+                workspace_navigator, "run_aerospace_command", side_effect=mock
+            ) as mock_cmd,
+            patch("sys.argv", ["workspace-navigate", "prev", "7"]),
+        ):
+            workspace_navigator.main()
+
+        mock_cmd.assert_any_call("workspace", "2")
+        for invocation in mock_cmd.call_args_list:
+            assert invocation[0][0] != "move-workspace-to-monitor"
 
 
 class TestMoveWindowFlag:
@@ -168,7 +203,7 @@ class TestMoveWindowFlag:
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "next", "--move-window"]),
+            patch("sys.argv", ["workspace-navigate", "next", "7", "--move-window"]),
         ):
             workspace_navigator.main()
 
@@ -181,25 +216,29 @@ class TestMoveWindowFlag:
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "next"]),
+            patch("sys.argv", ["workspace-navigate", "next", "7"]),
         ):
             workspace_navigator.main()
 
         for invocation in mock_cmd.call_args_list:
             assert invocation[0][0] != "move-node-to-workspace"
 
-    def test_moves_window_and_workspace_across_monitors(self):
-        mock = make_aerospace_mock(4, DUAL_MONITORS, DUAL_MONITOR_WORKSPACES)
+    def test_moves_window_to_empty_workspace_skipping_other_monitor(self):
+        mock = make_aerospace_mock(
+            4,
+            DUAL_MONITORS,
+            DUAL_MONITOR_SPARSE_WORKSPACES,
+            visible_workspaces=[3, 4],
+        )
         with (
             patch.object(
                 workspace_navigator, "run_aerospace_command", side_effect=mock
             ) as mock_cmd,
-            patch("sys.argv", ["workspace-navigate", "prev", "--move-window"]),
+            patch("sys.argv", ["workspace-navigate", "prev", "7", "--move-window"]),
         ):
             workspace_navigator.main()
 
-        mock_cmd.assert_any_call(
-            "move-workspace-to-monitor", "--workspace", "3", "RG241Y"
-        )
-        mock_cmd.assert_any_call("move-node-to-workspace", "3")
-        mock_cmd.assert_any_call("workspace", "3")
+        for invocation in mock_cmd.call_args_list:
+            assert invocation[0][0] != "move-workspace-to-monitor"
+        mock_cmd.assert_any_call("move-node-to-workspace", "2")
+        mock_cmd.assert_any_call("workspace", "2")

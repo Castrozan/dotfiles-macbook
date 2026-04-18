@@ -16,9 +16,9 @@ def get_focused_workspace_number():
     return int(output)
 
 
-def get_all_workspace_numbers_sorted():
-    output = run_aerospace_command("list-workspaces", "--all")
-    return sorted(int(line) for line in output.split("\n") if line.strip())
+def get_visible_workspace_numbers():
+    output = run_aerospace_command("list-workspaces", "--visible")
+    return [int(line) for line in output.split("\n") if line.strip()]
 
 
 def parse_monitors_with_names():
@@ -44,6 +44,18 @@ def find_monitor_name_containing_workspace(monitors, workspace_number):
     return None
 
 
+def build_navigable_workspaces(total_workspaces, focused_workspace, visible_workspaces):
+    all_workspaces = list(range(1, total_workspaces + 1))
+    workspaces_visible_on_other_monitors = [
+        workspace for workspace in visible_workspaces if workspace != focused_workspace
+    ]
+    return [
+        workspace
+        for workspace in all_workspaces
+        if workspace not in workspaces_visible_on_other_monitors
+    ]
+
+
 def calculate_adjacent_workspace_with_wraparound(current, all_workspaces, direction):
     current_index = all_workspaces.index(current)
     if direction == "next":
@@ -53,13 +65,13 @@ def calculate_adjacent_workspace_with_wraparound(current, all_workspaces, direct
     return all_workspaces[adjacent_index]
 
 
-def move_workspace_to_monitor_if_needed(
+def move_workspace_to_focused_monitor_if_needed(
     target_workspace, focused_monitor_name, monitors
 ):
     target_monitor_name = find_monitor_name_containing_workspace(
         monitors, target_workspace
     )
-    if target_monitor_name != focused_monitor_name:
+    if target_monitor_name is not None and target_monitor_name != focused_monitor_name:
         run_aerospace_command(
             "move-workspace-to-monitor",
             "--workspace",
@@ -70,12 +82,18 @@ def move_workspace_to_monitor_if_needed(
 
 def main():
     direction = sys.argv[1]
+    total_workspaces = int(sys.argv[2])
     should_move_focused_window = "--move-window" in sys.argv
 
     focused_workspace = get_focused_workspace_number()
-    all_workspaces = get_all_workspace_numbers_sorted()
+    visible_workspaces = get_visible_workspace_numbers()
+
+    navigable_workspaces = build_navigable_workspaces(
+        total_workspaces, focused_workspace, visible_workspaces
+    )
+
     target_workspace = calculate_adjacent_workspace_with_wraparound(
-        focused_workspace, all_workspaces, direction
+        focused_workspace, navigable_workspaces, direction
     )
 
     monitors = parse_monitors_with_names()
@@ -84,7 +102,7 @@ def main():
         focused_monitor_name = find_monitor_name_containing_workspace(
             monitors, focused_workspace
         )
-        move_workspace_to_monitor_if_needed(
+        move_workspace_to_focused_monitor_if_needed(
             target_workspace, focused_monitor_name, monitors
         )
 
