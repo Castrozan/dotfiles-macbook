@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import signal
 import subprocess
 import time
 from pathlib import Path
@@ -145,8 +146,20 @@ def launch_application(application_name):
     )
 
 
+def kill_existing_chooser_processes():
+    result = subprocess.run(
+        ["pgrep", "-x", "choose"],
+        capture_output=True,
+        text=True,
+    )
+    for pid_string in result.stdout.strip().splitlines():
+        if pid_string:
+            os.kill(int(pid_string), signal.SIGTERM)
+
+
 def main():
     ensure_nix_packages_in_path()
+    kill_existing_chooser_processes()
     chooser_process = start_chooser_process()
 
     applications = discover_installed_applications()
