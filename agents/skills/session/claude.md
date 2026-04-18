@@ -1,8 +1,3 @@
----
-name: claude
-description: Delegate work to Claude Code as an interactive session or a one-shot autonomous task. Use when spawning agents, handing off complex implementation, or running parallel coding sessions.
----
-
 <interactive_session>
 Opens a visible tmux window. Agent runs interactively, so you can watch it work, intervene, or follow up. Use when you need visibility or may need to course-correct mid-task.
 

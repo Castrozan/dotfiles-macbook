@@ -1,8 +1,3 @@
----
-name: notify
-description: Notify the user after completing substantial work. Use when finishing long tasks, implementations, or background operations. Plays audio and shows a desktop notification by default.
----
-
 <execution>
 Run scripts/notify.sh with a brief message. Voice is auto-detected from tts.json in the workspace root. Use --mobile for push notifications.
 </execution>
