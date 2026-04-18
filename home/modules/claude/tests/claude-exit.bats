@@ -18,9 +18,9 @@ load '../../../../tests/helpers/bash-script-assertions'
 	assert_script_source_matches 'CLAUDE_COMMAND_NAME.*==.*claude'
 }
 
-@test "sends SIGTERM not SIGKILL for clean shutdown" {
+@test "sends SIGTERM not SIGKILL to parent for clean shutdown" {
 	assert_script_source_matches 'kill -TERM'
-	run grep -c 'SIGKILL\|kill -9\|kill -KILL' "$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/../scripts/claude-exit"
+	run grep -c 'kill -9\|kill -KILL' "$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/../scripts/claude-exit"
 	[ "$output" = "0" ]
 }
 
@@ -30,4 +30,12 @@ load '../../../../tests/helpers/bash-script-assertions'
 
 @test "reports full path in safety check failure message" {
 	assert_script_source_matches 'CLAUDE_COMMAND_FULL_PATH.*PID'
+}
+
+@test "kills child processes after parent termination" {
+	assert_script_source_matches 'pkill.*-P.*CLAUDE_PID'
+}
+
+@test "child cleanup happens after parent SIGTERM" {
+	assert_pattern_appears_before 'kill -TERM.*CLAUDE_PID' 'pkill.*-P.*CLAUDE_PID'
 }
