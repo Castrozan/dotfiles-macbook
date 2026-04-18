@@ -1,6 +1,9 @@
 import json
 import os
+import socket
+import tempfile
 import threading
+import time
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -923,3 +926,104 @@ class TestCommandSocketServerDispatch:
         server = daemon.CommandSocketServer(mock_state, tracker)
         server._dispatch_command_to_main_thread("focus:notanumber")
         assert tracker._window_ids_by_recency == []
+
+    def test_empty_command_is_not_dispatched(self):
+        mock_state = MagicMock()
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
+        server._dispatch_command_to_main_thread("")
+        mock_state.handle_next_command.assert_not_called()
+        mock_state.handle_prev_command.assert_not_called()
+        mock_state.handle_commit_command.assert_not_called()
+        mock_state.handle_cancel_command.assert_not_called()
+
+
+class TestAutoCommitTimeoutValue:
+    def test_timeout_is_ten_seconds(self):
+        assert daemon.COMMIT_TIMEOUT_SECONDS == 10.0
+
+    def test_commit_timeout_timer_uses_configured_value(
+        self, aerospace_provider_with_windows, mock_overlay, mock_commit_timers
+    ):
+        state = daemon.WindowSwitcherStateMachine(
+            aerospace_provider_with_windows,
+            mock_overlay,
+            daemon.MostRecentlyUsedWindowTracker(),
+        )
+        state.handle_next_command()
+        mock_commit_timers.assert_called()
+        timeout_value = mock_commit_timers.call_args[0][0]
+        assert timeout_value == 10.0
+
+
+@pytest.mark.real_threads
+class TestCommandSocketServerRecvTimeout:
+    def test_slow_client_does_not_block_subsequent_commands(self):
+        temporary_socket_path = os.path.join(
+            tempfile.mkdtemp(dir="/tmp"), "test-server.sock"
+        )
+        mock_state = MagicMock()
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
+
+        with patch.object(daemon, "SOCKET_PATH", temporary_socket_path):
+            server_thread = threading.Thread(
+                target=server._run_server_loop, daemon=True
+            )
+            server_thread.start()
+            time.sleep(0.1)
+
+            slow_client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            slow_client.connect(temporary_socket_path)
+
+            time.sleep(0.7)
+
+            fast_client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            fast_client.connect(temporary_socket_path)
+            fast_client.sendall(b"next")
+            fast_client.close()
+
+            time.sleep(0.2)
+
+            slow_client.close()
+
+        mock_state.handle_next_command.assert_called()
+
+        try:
+            os.unlink(temporary_socket_path)
+        except FileNotFoundError:
+            pass
+
+    def test_server_listen_backlog_handles_burst_connections(self):
+        temporary_socket_path = os.path.join(
+            tempfile.mkdtemp(dir="/tmp"), "test-burst.sock"
+        )
+        mock_state = MagicMock()
+        tracker = daemon.MostRecentlyUsedWindowTracker()
+        server = daemon.CommandSocketServer(mock_state, tracker)
+
+        with patch.object(daemon, "SOCKET_PATH", temporary_socket_path):
+            server_thread = threading.Thread(
+                target=server._run_server_loop, daemon=True
+            )
+            server_thread.start()
+            time.sleep(0.1)
+
+            clients = []
+            for _ in range(15):
+                client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                client.connect(temporary_socket_path)
+                client.sendall(b"cancel")
+                clients.append(client)
+
+            for client in clients:
+                client.close()
+
+            time.sleep(0.5)
+
+        assert mock_state.handle_cancel_command.call_count >= 10
+
+        try:
+            os.unlink(temporary_socket_path)
+        except FileNotFoundError:
+            pass

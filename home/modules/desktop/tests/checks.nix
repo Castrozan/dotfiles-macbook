@@ -101,6 +101,16 @@ in
       ) (lib.range 1 7))
       "all workspaces 1-7 should have cmd-shift-N move-and-follow bindings";
 
+  domain-desktop-aerospace-focus-event-uses-compiled-client =
+    mkEvalCheck "domain-desktop-aerospace-focus-event-uses-compiled-client"
+      (lib.any (cmd: lib.hasInfix "workspace-switcher-send" cmd) aerospaceSettings.on-focus-changed)
+      "on-focus-changed must use compiled workspace-switcher-send instead of nc";
+
+  domain-desktop-aerospace-focus-event-does-not-use-netcat =
+    mkEvalCheck "domain-desktop-aerospace-focus-event-does-not-use-netcat"
+      (!(lib.any (cmd: lib.hasInfix "/usr/bin/nc" cmd) aerospaceSettings.on-focus-changed))
+      "on-focus-changed must not use /usr/bin/nc (replaced by compiled client)";
+
   domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces =
     let
       expectedStartupCommands =
