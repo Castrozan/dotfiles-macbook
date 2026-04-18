@@ -47,6 +47,7 @@ return {
   default_prog = { wezterm.target_triple:find('darwin') and '/run/current-system/sw/bin/fish' or 'fish' },
   default_cwd = wezterm.home_dir,
 
+  term = 'wezterm',
   enable_csi_u_key_encoding = true,
 
   bypass_mouse_reporting_modifiers = 'CTRL',
