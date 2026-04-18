@@ -69,12 +69,18 @@ in
 
   domain-desktop-aerospace-move-workspace-prev-follows =
     mkEvalCheck "domain-desktop-aerospace-move-workspace-prev-follows"
-      (lib.hasInfix "workspace-navigate prev --move-window" aerospaceBindings.cmd-alt-shift-left)
+      (
+        lib.hasInfix "workspace-navigate prev" aerospaceBindings.cmd-alt-shift-left
+        && lib.hasInfix "--move-window" aerospaceBindings.cmd-alt-shift-left
+      )
       "move-to-prev-and-follow must be bound to cmd-alt-shift-left via workspace-navigate script";
 
   domain-desktop-aerospace-move-workspace-next-follows =
     mkEvalCheck "domain-desktop-aerospace-move-workspace-next-follows"
-      (lib.hasInfix "workspace-navigate next --move-window" aerospaceBindings.cmd-alt-shift-right)
+      (
+        lib.hasInfix "workspace-navigate next" aerospaceBindings.cmd-alt-shift-right
+        && lib.hasInfix "--move-window" aerospaceBindings.cmd-alt-shift-right
+      )
       "move-to-next-and-follow must be bound to cmd-alt-shift-right via workspace-navigate script";
 
   domain-desktop-aerospace-all-workspaces-have-switch-binding =
