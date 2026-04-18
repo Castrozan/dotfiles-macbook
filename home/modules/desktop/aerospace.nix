@@ -58,7 +58,6 @@ let
 
   applicationBindings = {
     cmd-f = "fullscreen";
-    cmd-w = "close";
   };
 in
 {

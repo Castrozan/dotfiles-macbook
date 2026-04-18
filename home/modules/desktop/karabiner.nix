@@ -114,6 +114,23 @@ let
             ];
           }
           {
+            description = "Cmd+W closes focused window via AeroSpace";
+            manipulators = [
+              {
+                type = "basic";
+                from = {
+                  key_code = "w";
+                  modifiers.mandatory = [ "command" ];
+                };
+                to = [
+                  {
+                    shell_command = "/etc/profiles/per-user/${config.home.username}/bin/aerospace close";
+                  }
+                ];
+              }
+            ];
+          }
+          {
             description = "Cmd+Q launches application launcher via AeroSpace";
             manipulators = [
               {
