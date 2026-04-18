@@ -3,7 +3,6 @@
   home.packages = with pkgs; [
     bat
     btop
-    choose-gui
     curl
     delta
     docker

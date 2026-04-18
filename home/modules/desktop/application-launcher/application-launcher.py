@@ -112,9 +112,9 @@ def build_display_line_for_application(application_name, running_application_nam
     return f"{NOT_RUNNING_APPLICATION_INDICATOR} {application_name}"
 
 
-def start_chooser_process():
+def start_picker_process():
     return subprocess.Popen(
-        ["choose"],
+        ["fuzzy-picker"],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -122,11 +122,11 @@ def start_chooser_process():
     )
 
 
-def finish_chooser_with_display_lines(chooser_process, display_lines):
-    chooser_input = "\n".join(display_lines)
-    stdout, _ = chooser_process.communicate(input=chooser_input)
+def finish_picker_with_display_lines(picker_process, display_lines):
+    picker_input = "\n".join(display_lines)
+    stdout, _ = picker_process.communicate(input=picker_input)
     selected = stdout.strip()
-    if chooser_process.returncode != 0 or not selected:
+    if picker_process.returncode != 0 or not selected:
         return None
     return selected
 
@@ -146,9 +146,9 @@ def launch_application(application_name):
     )
 
 
-def kill_existing_chooser_processes():
+def kill_existing_picker_processes():
     result = subprocess.run(
-        ["pgrep", "-x", "choose"],
+        ["pgrep", "-x", "fuzzy-picker"],
         capture_output=True,
         text=True,
     )
@@ -159,8 +159,8 @@ def kill_existing_chooser_processes():
 
 def main():
     ensure_nix_packages_in_path()
-    kill_existing_chooser_processes()
-    chooser_process = start_chooser_process()
+    kill_existing_picker_processes()
+    picker_process = start_picker_process()
 
     applications = discover_installed_applications()
     history = load_launch_history()
@@ -173,8 +173,8 @@ def main():
     ]
     display_line_to_application_name = dict(zip(display_lines, sorted_applications))
 
-    selected_display_line = finish_chooser_with_display_lines(
-        chooser_process, display_lines
+    selected_display_line = finish_picker_with_display_lines(
+        picker_process, display_lines
     )
     if not selected_display_line:
         return
