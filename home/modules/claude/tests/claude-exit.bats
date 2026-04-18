@@ -20,7 +20,7 @@ load '../../../../tests/helpers/bash-script-assertions'
 
 @test "sends SIGTERM not SIGKILL to parent for clean shutdown" {
 	assert_script_source_matches 'kill -TERM'
-	run grep -c 'kill -9\|kill -KILL' "$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/../scripts/claude-exit"
+	run grep -c '^[[:space:]]*kill -9\|^[[:space:]]*kill -KILL' "$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/../scripts/claude-exit"
 	[ "$output" = "0" ]
 }
 
