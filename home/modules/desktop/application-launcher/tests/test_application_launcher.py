@@ -257,7 +257,7 @@ class TestLaunchApplication:
         application_launcher.launch_application("Safari")
 
         mock_popen.assert_called_once_with(
-            ["open", "-a", "Safari"],
+            ["open", "-n", "-a", "Safari"],
             start_new_session=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

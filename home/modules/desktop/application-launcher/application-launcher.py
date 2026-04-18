@@ -139,7 +139,7 @@ def extract_application_name_from_display_line(display_line):
 
 def launch_application(application_name):
     subprocess.Popen(
-        ["open", "-a", application_name],
+        ["open", "-n", "-a", application_name],
         start_new_session=True,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
