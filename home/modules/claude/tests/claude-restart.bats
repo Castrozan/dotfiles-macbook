@@ -60,6 +60,14 @@ SCRIPT_UNDER_TEST="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/../scripts/cl
 	assert_pattern_appears_before 'nohup' 'kill -TERM'
 }
 
+@test "checks pane existence in watcher loop to prevent orphan watchers" {
+	assert_script_source_matches 'tmux display-message.*exit 0'
+}
+
+@test "kills child processes after claude death in watcher" {
+	assert_script_source_matches 'pkill.*-P.*CLAUDE_PID'
+}
+
 @test "project dir path conversion handles dotfiles path correctly" {
 	local test_path="/Users/lucas.zanoni/.dotfiles"
 	local slashes_replaced="${test_path//\//-}"

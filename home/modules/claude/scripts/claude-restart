@@ -60,12 +60,23 @@ fi
 echo "Restarting with: $RESUME_COMMAND"
 
 nohup bash -c "
-    while kill -0 $CLAUDE_PID 2>/dev/null; do sleep 0.2; done
+    while kill -0 $CLAUDE_PID 2>/dev/null; do
+        tmux display-message -t '$CURRENT_TMUX_PANE' -p '' 2>/dev/null || exit 0
+        sleep 0.2
+    done
+
+    pkill -TERM -P $CLAUDE_PID 2>/dev/null || true
+    sleep 0.5
+    pkill -KILL -P $CLAUDE_PID 2>/dev/null || true
+
+    tmux display-message -t '$CURRENT_TMUX_PANE' -p '' 2>/dev/null || exit 0
+
     sleep 1
     tmux send-keys -t '$CURRENT_TMUX_PANE' '$RESUME_COMMAND' Enter
 
     if [[ -n '$CONTINUATION_PROMPT' ]]; then
         for ATTEMPT in \$(seq 1 60); do
+            tmux display-message -t '$CURRENT_TMUX_PANE' -p '' 2>/dev/null || exit 0
             PANE_CONTENT=\$(tmux capture-pane -t '$CURRENT_TMUX_PANE' -p -S -5)
             if echo \"\$PANE_CONTENT\" | grep -q '❯'; then
                 break
@@ -73,6 +84,7 @@ nohup bash -c "
             sleep 1
         done
         sleep 2
+        tmux display-message -t '$CURRENT_TMUX_PANE' -p '' 2>/dev/null || exit 0
         tmux send-keys -t '$CURRENT_TMUX_PANE' '$CONTINUATION_PROMPT' Enter
     fi
 " &>/dev/null &
