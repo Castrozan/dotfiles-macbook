@@ -59,33 +59,23 @@ in
 
   domain-desktop-aerospace-workspace-prev-bound =
     mkEvalCheck "domain-desktop-aerospace-workspace-prev-bound"
-      (aerospaceBindings.cmd-alt-left == "workspace prev")
-      "workspace prev must be bound to cmd-alt-left";
+      (lib.hasInfix "workspace-navigate prev" aerospaceBindings.cmd-alt-left)
+      "workspace prev must be bound to cmd-alt-left via workspace-navigate script";
 
   domain-desktop-aerospace-workspace-next-bound =
     mkEvalCheck "domain-desktop-aerospace-workspace-next-bound"
-      (aerospaceBindings.cmd-alt-right == "workspace next")
-      "workspace next must be bound to cmd-alt-right";
+      (lib.hasInfix "workspace-navigate next" aerospaceBindings.cmd-alt-right)
+      "workspace next must be bound to cmd-alt-right via workspace-navigate script";
 
   domain-desktop-aerospace-move-workspace-prev-follows =
     mkEvalCheck "domain-desktop-aerospace-move-workspace-prev-follows"
-      (
-        aerospaceBindings.cmd-alt-shift-left == [
-          "move-node-to-workspace prev"
-          "workspace prev"
-        ]
-      )
-      "move-to-prev-and-follow must be bound to cmd-alt-shift-left";
+      (lib.hasInfix "workspace-navigate prev --move-window" aerospaceBindings.cmd-alt-shift-left)
+      "move-to-prev-and-follow must be bound to cmd-alt-shift-left via workspace-navigate script";
 
   domain-desktop-aerospace-move-workspace-next-follows =
     mkEvalCheck "domain-desktop-aerospace-move-workspace-next-follows"
-      (
-        aerospaceBindings.cmd-alt-shift-right == [
-          "move-node-to-workspace next"
-          "workspace next"
-        ]
-      )
-      "move-to-next-and-follow must be bound to cmd-alt-shift-right";
+      (lib.hasInfix "workspace-navigate next --move-window" aerospaceBindings.cmd-alt-shift-right)
+      "move-to-next-and-follow must be bound to cmd-alt-shift-right via workspace-navigate script";
 
   domain-desktop-aerospace-all-workspaces-have-switch-binding =
     mkEvalCheck "domain-desktop-aerospace-all-workspaces-have-switch-binding"
