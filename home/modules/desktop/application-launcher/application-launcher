@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+readonly _APPLICATION_SEARCH_DIRECTORIES=(
+	"/Applications"
+	"/Applications/Utilities"
+	"/System/Applications"
+	"/System/Applications/Utilities"
+	"$HOME/Applications"
+	"$HOME/Applications/Home Manager Apps"
+)
+readonly _HISTORY_FILE_PATH="$HOME/.local/share/application-launcher/history.json"
+readonly _FRECENCY_HALF_LIFE_DAYS=7
+
+_kill_existing_picker_processes() {
+	pkill -x fuzzy-picker 2>/dev/null || true
+}
+
+_discover_installed_applications() {
+	for searchDirectory in "${_APPLICATION_SEARCH_DIRECTORIES[@]}"; do
+		if [[ -d "$searchDirectory" ]]; then
+			find "$searchDirectory" -maxdepth 1 -name "*.app" -exec basename {} .app \; 2>/dev/null
+		fi
+	done | sort -u
+}
+
+_get_running_application_names() {
+	lsappinfo visibleProcessList 2>/dev/null | grep -oE '"[^"]+"' | tr -d '"' | tr '_' ' '
+}
+
+_sort_applications_by_frecency() {
+	local applicationList="$1"
+
+	if [[ ! -f "$_HISTORY_FILE_PATH" ]]; then
+		echo "$applicationList"
+		return
+	fi
+
+	local currentTimestamp
+	currentTimestamp=$(date +%s)
+
+	echo "$applicationList" | jq -Rrs --argjson history "$(cat "$_HISTORY_FILE_PATH")" --argjson now "$currentTimestamp" --argjson halfLife "$_FRECENCY_HALF_LIFE_DAYS" '
+		split("\n") | map(select(length > 0)) |
+		sort_by(
+			. as $name |
+			if $history[$name] then
+				$history[$name] |
+				(($now - .last_launched_at) / 86400) as $days |
+				-((.launch_count) * pow(2; -($days / $halfLife)))
+			else
+				1e9
+			end,
+			(. | ascii_downcase)
+		) |
+		.[]
+	'
+}
+
+_build_display_lines() {
+	local sortedApplications="$1"
+	local runningApplications="$2"
+
+	while IFS= read -r applicationName; do
+		if echo "$runningApplications" | grep -qxF "$applicationName"; then
+			echo "● $applicationName"
+		else
+			echo "  $applicationName"
+		fi
+	done <<<"$sortedApplications"
+}
+
+_extract_application_name_from_display_line() {
+	local displayLine="$1"
+	displayLine="${displayLine#● }"
+	displayLine="${displayLine#  }"
+	echo "$displayLine"
+}
+
+_record_launch_in_history() {
+	local applicationName="$1"
+	local currentTimestamp
+	currentTimestamp=$(date +%s)
+
+	mkdir -p "$(dirname "$_HISTORY_FILE_PATH")"
+
+	local existingHistory="{}"
+	if [[ -f "$_HISTORY_FILE_PATH" ]]; then
+		existingHistory=$(cat "$_HISTORY_FILE_PATH")
+	fi
+
+	echo "$existingHistory" | jq --arg name "$applicationName" --argjson now "$currentTimestamp" '
+		.[$name] = {
+			launch_count: ((.[$name].launch_count // 0) + 1),
+			last_launched_at: $now
+		}
+	' >"$_HISTORY_FILE_PATH"
+}
+
+main() {
+	_kill_existing_picker_processes
+
+	local applicationList
+	applicationList=$(_discover_installed_applications)
+
+	local sortedApplications
+	sortedApplications=$(_sort_applications_by_frecency "$applicationList")
+
+	local runningApplications
+	runningApplications=$(_get_running_application_names)
+
+	local displayLines
+	displayLines=$(_build_display_lines "$sortedApplications" "$runningApplications")
+
+	local selectedDisplayLine
+	selectedDisplayLine=$(echo "$displayLines" | fuzzy-picker) || true
+
+	if [[ -z "$selectedDisplayLine" ]]; then
+		return
+	fi
+
+	local selectedApplication
+	selectedApplication=$(_extract_application_name_from_display_line "$selectedDisplayLine")
+
+	_record_launch_in_history "$selectedApplication"
+	open -n -a "$selectedApplication" &
+}
+
+main

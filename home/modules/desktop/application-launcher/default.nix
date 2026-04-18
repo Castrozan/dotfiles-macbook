@@ -8,9 +8,7 @@ in
     (pkgs.writeShellScriptBin "fuzzy-picker" ''
       exec "${fuzzyPickerBinaryPath}" "$@"
     '')
-    (pkgs.writeShellScriptBin "application-launcher" ''
-      exec ${pkgs.python312}/bin/python3 ${./application-launcher.py}
-    '')
+    (pkgs.writeShellScriptBin "application-launcher" (builtins.readFile ./application-launcher))
   ];
 
   home.activation.compileFuzzyPicker = config.lib.dag.entryAfter [ "writeBoundary" ] ''
