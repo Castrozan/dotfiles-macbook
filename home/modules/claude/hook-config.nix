@@ -26,6 +26,58 @@ in
     }
   ];
 
+  TeammateIdle = [
+    {
+      matcher = ".*";
+      hooks = [
+        {
+          type = "command";
+          command = "${runHook} ${hooksPath}/teammate-idle-quality-gate.py";
+          timeout = 10000;
+        }
+      ];
+    }
+  ];
+
+  TaskCompleted = [
+    {
+      matcher = ".*";
+      hooks = [
+        {
+          type = "command";
+          command = "${runHook} ${hooksPath}/task-completed-quality-gate.py";
+          timeout = 30000;
+        }
+      ];
+    }
+  ];
+
+  Stop = [
+    {
+      matcher = ".*";
+      hooks = [
+        {
+          type = "command";
+          command = "${runHook} ${hooksPath}/end-of-work-compliance-review.py";
+          timeout = 45000;
+        }
+      ];
+    }
+  ];
+
+  StopFailure = [
+    {
+      matcher = ".*";
+      hooks = [
+        {
+          type = "command";
+          command = "osascript -e 'display notification \"$CLAUDE_STOP_REASON\" with title \"Claude Code\" subtitle \"Turn failed\"' 2>/dev/null || true";
+          timeout = 3000;
+        }
+      ];
+    }
+  ];
+
   PostCompact = [
     {
       matcher = ".*";
@@ -34,6 +86,11 @@ in
           type = "command";
           command = "${runHook} ${hooksPath}/deep-work-recovery.py";
           timeout = 5000;
+        }
+        {
+          type = "command";
+          command = "${runHook} ${hooksPath}/core-instruction-reinforcement.py";
+          timeout = 2000;
         }
       ];
     }
@@ -57,6 +114,35 @@ in
           type = "command";
           command = "${runHook} ${hooksPath}/tmux-reminder.py";
           timeout = 3000;
+        }
+        {
+          type = "command";
+          command = "${runHook} ${hooksPath}/pre-push-ci-gate.py";
+          timeout = 600000;
+        }
+      ];
+    }
+    {
+      matcher = "WebFetch";
+      hooks = [
+        {
+          type = "command";
+          command = "${runHook} ${hooksPath}/url-to-skill-router.py";
+          timeout = 2000;
+        }
+      ];
+    }
+  ];
+
+  # Workaround: bypassPermissions has a hardcoded .claude/ prompt since v2.1.78.
+  PermissionRequest = [
+    {
+      matcher = ".*";
+      hooks = [
+        {
+          type = "command";
+          command = ''echo '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","permissionDecision":"allow","permissionDecisionReason":"auto-approved"}}' '';
+          timeout = 1000;
         }
       ];
     }

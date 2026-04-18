@@ -17,7 +17,8 @@ let
   };
 
   claudeGlobalSettings = {
-    model = "opus[1m]";
+    installMethod = "native";
+    model = "opus";
     effortLevel = "high";
     language = "english";
     spinnerTipsEnabled = false;
@@ -25,16 +26,19 @@ let
     skipDangerousModePermissionPrompt = true;
     includeCoAuthoredBy = false;
     includeGitInstructions = false;
-    showTurnDuration = false;
+    showTurnDuration = true;
+    teammateMode = "tmux";
+    env = {
+      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+      CLAUDE_ENABLE_STREAM_WATCHDOG = "1";
+      PATH = "/run/current-system/sw/bin:/etc/profiles/per-user/${config.home.username}/bin:/nix/var/nix/profiles/default/bin:/usr/bin:/bin";
+    };
     permissions = {
       defaultMode = "bypassPermissions";
       allow = [ "*" ];
       deny = [ ];
     };
     terminalShowHoverHint = false;
-    env = {
-      PATH = "/run/current-system/sw/bin:/etc/profiles/per-user/${config.home.username}/bin:/nix/var/nix/profiles/default/bin:/usr/bin:/bin";
-    };
     statusLine = {
       type = "command";
       command = "bash $HOME/.claude/statusline-command.sh";
@@ -50,10 +54,12 @@ let
 
   claudeGlobalSettingsJson = builtins.toJSON claudeGlobalSettings;
 
-  claudeDotfilesRules = ''
-    # Dotfiles Repository
+  coreAgentRawContent = builtins.readFile ../../../agents/core.md;
+  coreAgentSplitOnFrontmatterDelimiter = builtins.split "---\n" coreAgentRawContent;
+  coreAgentBodyWithoutFrontmatter = builtins.elemAt coreAgentSplitOnFrontmatterDelimiter 4;
 
-    Nix-based dotfiles repository managing system and home configurations across NixOS and standalone home-manager hosts. Use /dotfiles skill for repository patterns, directory organization, and anti-patterns. Use /rebuild to apply changes. Use /test for verification. Core behavior instructions are in the global CLAUDE.md; do not duplicate them here.
+  claudeDotfilesRules = ''
+    @AGENTS.md
 
     ## Policies
 
@@ -66,9 +72,7 @@ let
     System rebuilds must never cause visual disruption to the running compositor. Configuration reloads that do not involve monitor hardware changes must not re-apply monitor rules, as mode negotiation causes DRM mode switches visible as screen blackouts. Compositor autoreload from config management symlink updates must be suppressed because the config directory symlink changes on every rebuild regardless of content. Only monitor hardware events (plug, unplug, manual toggle) justify full compositor reload with monitor re-application.
   '';
 
-  claudeGlobalRules = ''
-    ${builtins.readFile ../../../agents/core.md}
-  '';
+  claudeGlobalRules = coreAgentBodyWithoutFrontmatter;
 in
 {
   home = {
@@ -103,7 +107,11 @@ in
         if [ -f "$NIX_SOURCE" ]; then
           if [ -f "$CLAUDE_SETTINGS" ]; then
             chmod 600 "$CLAUDE_SETTINGS" 2>/dev/null || true
-            ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$NIX_SOURCE" > "$CLAUDE_SETTINGS.tmp" && mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+            MERGED_SETTINGS=$(${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$NIX_SOURCE")
+            CURRENT_SETTINGS=$(cat "$CLAUDE_SETTINGS")
+            if [ "$MERGED_SETTINGS" != "$CURRENT_SETTINGS" ]; then
+              echo "$MERGED_SETTINGS" > "$CLAUDE_SETTINGS.tmp" && mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+            fi
           else
             cp "$NIX_SOURCE" "$CLAUDE_SETTINGS"
           fi
@@ -112,13 +120,23 @@ in
       '';
     };
 
-    activation.removeNativeInstallMethodFromClaudeJson = {
+    activation.patchClaudeJsonInstallMethod = {
       after = [ "writeBoundary" ];
       before = [ ];
       data = ''
         CLAUDE_JSON="$HOME/.claude.json"
-        if [ -f "$CLAUDE_JSON" ] && ${pkgs.jq}/bin/jq -e '.installMethod == "native"' "$CLAUDE_JSON" >/dev/null 2>&1; then
-          ${pkgs.jq}/bin/jq 'del(.installMethod)' "$CLAUDE_JSON" > "$CLAUDE_JSON.tmp" && mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
+        if [ -f "$CLAUDE_JSON" ]; then
+          if ! ${pkgs.jq}/bin/jq '.' "$CLAUDE_JSON" >/dev/null 2>&1; then
+            echo "WARNING: $CLAUDE_JSON is corrupt, skipping patch" >&2
+          else
+            PATCHED_CONTENT=$(${pkgs.jq}/bin/jq '.installMethod = "native"' "$CLAUDE_JSON")
+            CURRENT_CONTENT=$(cat "$CLAUDE_JSON")
+            if [ "$PATCHED_CONTENT" != "$CURRENT_CONTENT" ]; then
+              echo "$PATCHED_CONTENT" > "$CLAUDE_JSON.tmp" && mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
+            fi
+          fi
+        else
+          echo '{"installMethod": "native"}' > "$CLAUDE_JSON"
         fi
       '';
     };

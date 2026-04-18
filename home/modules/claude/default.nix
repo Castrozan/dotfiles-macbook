@@ -3,11 +3,12 @@
   imports = [
     ./claude.nix
     ./config.nix
-    ./mcps
-    ./skills.nix
+    ./external-skill-sets.nix
     ./hooks.nix
+    ./mcps
     ./private.nix
-    ./workspace-trust.nix
     ./scripts.nix
+    ./skills.nix
+    ./workspace-trust.nix
   ];
 }

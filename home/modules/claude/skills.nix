@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -18,14 +17,30 @@ let
 
   skillNames = getSkillNamesFromDir dotfilesSkillsDir;
 
-  globalClaudeSkills = builtins.listToAttrs (
+  personalOnlySkills = import ./personal-only-skills.nix;
+
+  baseSkillNames = builtins.filter (name: !builtins.elem name personalOnlySkills) skillNames;
+
+  personalOnlySkillNames = builtins.filter (name: builtins.elem name personalOnlySkills) skillNames;
+
+  baseClaudeSkills = builtins.listToAttrs (
     map (dirname: {
       name = ".claude/skills/${dirname}";
       value = {
         source = dotfilesSkillsDir + "/${dirname}";
         recursive = true;
       };
-    }) skillNames
+    }) baseSkillNames
+  );
+
+  personalOnlyClaudeSkills = builtins.listToAttrs (
+    map (dirname: {
+      name = ".local/share/claude-skill-sets/personal/.claude/skills/${dirname}";
+      value = {
+        source = dotfilesSkillsDir + "/${dirname}";
+        recursive = true;
+      };
+    }) personalOnlySkillNames
   );
 
   coreAgentRawContent = builtins.readFile ../../../agents/core.md;
@@ -52,7 +67,7 @@ let
 
   copyCommands =
     let
-      getSourceRevisionCommand = "${pkgs.git}/bin/git -C \"${sourceRepoPath}\" rev-parse HEAD 2>/dev/null || true";
+      getSourceRevisionCommand = "git -C \"${sourceRepoPath}\" rev-parse HEAD 2>/dev/null || true";
       getInstalledRevisionCommand =
         targetDir: "cat \"${targetDir}/aplicacoes-atendimento-triage/.git-rev\" 2>/dev/null || true";
     in
@@ -71,7 +86,7 @@ let
     '') allSkillTargetDirectories;
 in
 {
-  home.file = globalClaudeSkills // coreSkillFromAgentInstructions;
+  home.file = baseClaudeSkills // personalOnlyClaudeSkills // coreSkillFromAgentInstructions;
 
   home.activation.copyAplicacoesAtendimentoTriageSkill = lib.hm.dag.entryAfter [
     "writeBoundary"
