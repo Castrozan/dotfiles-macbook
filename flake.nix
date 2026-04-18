@@ -80,6 +80,8 @@
           };
         };
 
+      homeManagerModules.claude-code = ./home/modules/claude;
+
       checks.${darwinSystem} = import ./tests/nix-checks {
         inherit (darwin) pkgs;
         inherit
