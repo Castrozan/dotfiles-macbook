@@ -6,6 +6,7 @@
 }:
 {
   imports = [
+    ./finder.nix
     ./yabai.nix
     ./symbolic-hotkeys.nix
     ./workspace-window-switcher.nix
@@ -58,7 +59,6 @@
         wvous-bl-corner = 1;
         wvous-br-corner = 14;
       };
-      finder.QuitMenuItem = true;
     };
   };
 

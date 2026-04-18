@@ -18,6 +18,9 @@ let
 
   windowManagerConfig = import ../yabai.nix;
   windowManager = windowManagerConfig.system.defaults.CustomUserPreferences."com.apple.WindowManager";
+
+  finderConfig = import ../finder.nix;
+  finderCustomPreferences = finderConfig.system.defaults.CustomUserPreferences."com.apple.finder";
 in
 {
   macbook-macos-tiling-disabled = mkEvalCheck "macbook-macos-tiling-disabled" (
@@ -42,4 +45,8 @@ in
     mkEvalCheck "macbook-macos-input-source-switching-disabled"
       (!symbolicHotKeys."60".enabled && !symbolicHotKeys."61".enabled)
       "input source switching hotkeys (60, 61) must be disabled so Ctrl+Space reaches terminal apps";
+
+  macbook-finder-create-desktop-disabled = mkEvalCheck "macbook-finder-create-desktop-disabled" (
+    !finderCustomPreferences.CreateDesktop
+  ) "Finder CreateDesktop must be disabled to prevent Finder from managing the desktop layer";
 }
