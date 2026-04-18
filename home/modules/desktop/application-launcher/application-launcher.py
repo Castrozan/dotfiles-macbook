@@ -195,7 +195,12 @@ def open_application_with_new_window_if_running(application_name):
 
     wezterm_binary = find_wezterm_binary()
     if application_name == "WezTerm" and wezterm_binary:
-        subprocess.run([wezterm_binary, "start"], timeout=5)
+        subprocess.Popen(
+            [wezterm_binary, "start"],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         return
 
     if application_name in APPLESCRIPT_MAKE_NEW_WINDOW_APPLICATIONS:
