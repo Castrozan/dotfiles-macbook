@@ -190,6 +190,24 @@ in
         ];
   }
   {
+    description = "Ctrl+Space to F20 in terminals (bypasses macOS input method interception)";
+    manipulators = [
+      {
+        type = "basic";
+        from = {
+          key_code = "spacebar";
+          modifiers.mandatory = [ "control" ];
+        };
+        to = [
+          {
+            key_code = "f20";
+          }
+        ];
+        conditions = onlyTerminalsCondition;
+      }
+    ];
+  }
+  {
     description = "Ctrl+Right to Option+Right in terminals (bypasses macOS WezTerm menu interception)";
     manipulators = [
       {
