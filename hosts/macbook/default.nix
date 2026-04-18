@@ -34,11 +34,6 @@
         "com.apple.AppleMultitouchTrackpad"."TrackpadFiveFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFourFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFiveFingerPinchGesture" = 0;
-        "com.lwouis.alt-tab-macos" = {
-          appsToShow = 0;
-          spacesToShow = 1;
-          showMinimizedWindows = 2;
-        };
       };
       NSGlobalDomain = {
         "com.apple.swipescrolldirection" = false;
@@ -84,7 +79,6 @@
     enable = true;
     onActivation.cleanup = "zap";
     casks = [
-      "alt-tab"
       "brave-browser"
       "dbeaver-community"
       "docker"
