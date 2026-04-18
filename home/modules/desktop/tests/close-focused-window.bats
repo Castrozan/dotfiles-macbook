@@ -2,7 +2,7 @@
 
 load '../../../../tests/helpers/bash-script-assertions'
 
-SCRIPT_UNDER_TEST="$(command -v close-focused-window)"
+SCRIPT_UNDER_TEST="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)/../scripts/close-focused-window"
 
 @test "is executable" {
 	assert_is_executable
