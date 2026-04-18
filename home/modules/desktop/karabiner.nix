@@ -4,7 +4,7 @@
   ...
 }:
 let
-  karabinerRules = import ./karabiner-rules.nix { username = config.home.username; };
+  karabinerRules = import ./karabiner-rules.nix { inherit (config.home) username; };
 
   karabinerConfig = {
     profiles = [
