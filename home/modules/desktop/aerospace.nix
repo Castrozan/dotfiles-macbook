@@ -1,4 +1,4 @@
-{ username, lib, ... }:
+{ lib, ... }:
 let
   workspaceNumbers = lib.range 1 7;
 
