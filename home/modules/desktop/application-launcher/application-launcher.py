@@ -6,6 +6,7 @@ import re
 import signal
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 APPLICATION_SEARCH_DIRECTORIES = [
@@ -28,6 +29,10 @@ LAUNCH_HISTORY_FILE_PATH = (
 )
 
 FRECENCY_HALF_LIFE_DAYS = 7
+
+PICKER_PID_FILE_PATH = (
+    Path.home() / ".local" / "share" / "application-launcher" / "picker.pid"
+)
 
 RUNNING_APPLICATION_INDICATOR = "●"
 NOT_RUNNING_APPLICATION_INDICATOR = " "
@@ -147,25 +152,38 @@ def launch_application(application_name):
 
 
 def kill_existing_picker_processes():
-    result = subprocess.run(
-        ["pgrep", "-x", "fuzzy-picker"],
-        capture_output=True,
-        text=True,
-    )
-    for pid_string in result.stdout.strip().splitlines():
-        if pid_string:
-            os.kill(int(pid_string), signal.SIGTERM)
+    try:
+        previous_picker_pid = int(PICKER_PID_FILE_PATH.read_text())
+        os.kill(previous_picker_pid, signal.SIGTERM)
+    except (
+        FileNotFoundError,
+        ValueError,
+        ProcessLookupError,
+        PermissionError,
+        OSError,
+    ):
+        pass
 
 
 def main():
     ensure_nix_packages_in_path()
-    kill_existing_picker_processes()
-    picker_process = start_picker_process()
 
-    applications = discover_installed_applications()
-    history = load_launch_history()
-    sorted_applications = sort_applications_by_frecency(applications, history)
-    running_applications = get_currently_running_application_names()
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        applications_future = executor.submit(discover_installed_applications)
+        history_future = executor.submit(load_launch_history)
+        running_applications_future = executor.submit(
+            get_currently_running_application_names
+        )
+
+        kill_existing_picker_processes()
+        picker_process = start_picker_process()
+        PICKER_PID_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PICKER_PID_FILE_PATH.write_text(str(picker_process.pid))
+
+        applications = applications_future.result()
+        history = history_future.result()
+        sorted_applications = sort_applications_by_frecency(applications, history)
+        running_applications = running_applications_future.result()
 
     display_lines = [
         build_display_line_for_application(app, running_applications)
