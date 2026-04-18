@@ -59,7 +59,6 @@ let
     "t"
     "u"
     "v"
-    "w"
     "x"
     "y"
     "z"
@@ -262,8 +261,6 @@ in
   }
   {
     description = "Linux-style Ctrl to Cmd shortcuts (except in terminals)";
-    manipulators = map (
-      letter: makeControlToCommandManipulator letter (if letter == "w" then "q" else letter)
-    ) controlToCommandLetters;
+    manipulators = map (letter: makeControlToCommandManipulator letter letter) controlToCommandLetters;
   }
 ]
