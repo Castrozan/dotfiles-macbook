@@ -1,5 +1,20 @@
 import Cocoa
 
+var inputLines: [String] = []
+while let line = readLine() {
+    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !trimmed.isEmpty {
+        inputLines.append(trimmed)
+    }
+}
+
+if inputLines.isEmpty {
+    exit(0)
+}
+
+let app = NSApplication.shared
+app.setActivationPolicy(.regular)
+
 class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate {
     let allItems: [String]
     var filteredItems: [String]
@@ -23,7 +38,7 @@ class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSourc
             contentRect: windowFrame,
             styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
-            defer: false
+            defer: true
         )
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
@@ -33,8 +48,7 @@ class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSourc
         window.backgroundColor = NSColor(white: 0.13, alpha: 0.95)
         window.hasShadow = true
 
-        searchField = NSTextField(frame: .zero)
-        searchField.translatesAutoresizingMaskIntoConstraints = false
+        searchField = NSTextField(frame: NSRect(x: 16, y: 0, width: Int(windowWidth) - 32, height: 28))
         searchField.placeholderString = "Search applications..."
         searchField.font = NSFont.systemFont(ofSize: 18)
         searchField.focusRingType = .none
@@ -42,8 +56,7 @@ class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSourc
         searchField.drawsBackground = false
         searchField.textColor = .white
 
-        let scrollView = NSScrollView(frame: .zero)
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: Int(windowWidth), height: Int(windowHeight) - 50))
         scrollView.hasVerticalScroller = true
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
@@ -52,38 +65,19 @@ class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSourc
         tableView.headerView = nil
         tableView.backgroundColor = .clear
         tableView.selectionHighlightStyle = .regular
-        tableView.rowHeight = 32
-        tableView.intercellSpacing = NSSize(width: 0, height: 2)
+        tableView.rowHeight = 30
+        tableView.intercellSpacing = NSSize(width: 0, height: 1)
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("item"))
         column.isEditable = false
         tableView.addTableColumn(column)
-
         scrollView.documentView = tableView
 
-        let separator = NSBox(frame: .zero)
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.boxType = .separator
-
         let contentView = window.contentView!
+        searchField.frame = NSRect(x: 16, y: Int(windowHeight) - 40, width: Int(windowWidth) - 32, height: 28)
+        scrollView.frame = NSRect(x: 0, y: 0, width: Int(windowWidth), height: Int(windowHeight) - 48)
         contentView.addSubview(searchField)
-        contentView.addSubview(separator)
         contentView.addSubview(scrollView)
-
-        NSLayoutConstraint.activate([
-            searchField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            searchField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            searchField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
-            separator.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 8),
-            separator.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-
-            scrollView.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 4),
-            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-        ])
 
         super.init()
 
@@ -96,7 +90,6 @@ class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSourc
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(searchField)
         NSApp.activate(ignoringOtherApps: true)
-
         if !filteredItems.isEmpty {
             tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
         }
@@ -172,16 +165,12 @@ class FuzzyPickerController: NSObject, NSTextFieldDelegate, NSTableViewDataSourc
         if cellView == nil {
             cellView = NSTableCellView(frame: .zero)
             let textField = NSTextField(labelWithString: "")
-            textField.translatesAutoresizingMaskIntoConstraints = false
-            textField.font = NSFont.systemFont(ofSize: 16)
+            textField.font = NSFont.systemFont(ofSize: 15)
             textField.textColor = .white
+            textField.frame = NSRect(x: 16, y: 0, width: 560, height: 28)
             cellView!.addSubview(textField)
             cellView!.textField = textField
             cellView!.identifier = identifier
-            NSLayoutConstraint.activate([
-                textField.leadingAnchor.constraint(equalTo: cellView!.leadingAnchor, constant: 16),
-                textField.centerYAnchor.constraint(equalTo: cellView!.centerYAnchor),
-            ])
         }
 
         cellView!.textField?.stringValue = filteredItems[row]
@@ -208,19 +197,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var controller: FuzzyPickerController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        var inputLines: [String] = []
-        while let line = readLine() {
-            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                inputLines.append(trimmed)
-            }
-        }
-
-        if inputLines.isEmpty {
-            NSApp.terminate(nil)
-            return
-        }
-
         controller = FuzzyPickerController(items: inputLines)
         controller.show()
     }
@@ -236,8 +212,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-let app = NSApplication.shared
-app.setActivationPolicy(.accessory)
 let delegate = AppDelegate()
 app.delegate = delegate
 app.run()
