@@ -21,7 +21,7 @@ let
     pname = "codex";
     inherit version;
     url = "https://github.com/openai/codex/releases/download/rust-v${version}/codex-${currentSystem.platform}.tar.gz";
-    sha256 = currentSystem.sha256;
+    inherit (currentSystem) sha256;
     binaryName = "codex";
     archiveBinaryPath = "codex-${currentSystem.platform}";
   };
