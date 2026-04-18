@@ -3,7 +3,6 @@
 import json
 import os
 import re
-import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -31,13 +30,6 @@ FRECENCY_HALF_LIFE_DAYS = 7
 
 RUNNING_APPLICATION_INDICATOR = "●"
 NOT_RUNNING_APPLICATION_INDICATOR = " "
-
-APPLESCRIPT_MAKE_NEW_WINDOW_APPLICATIONS = {
-    "Brave Browser",
-    "Google Chrome",
-    "Safari",
-    "Firefox",
-}
 
 
 def ensure_nix_packages_in_path():
@@ -144,70 +136,13 @@ def extract_application_name_from_display_line(display_line):
     )
 
 
-def is_application_currently_running(application_name):
-    result = subprocess.run(
-        ["osascript", "-e", f'application "{application_name}" is running'],
-        capture_output=True,
-        text=True,
-        timeout=5,
-    )
-    return result.stdout.strip() == "true"
-
-
-def find_wezterm_binary():
-    return shutil.which("wezterm")
-
-
-def open_new_window_via_applescript(application_name):
-    subprocess.run(
-        [
-            "osascript",
-            "-e",
-            f'tell application "{application_name}" to make new window',
-        ],
-        timeout=5,
-    )
-
-
-def open_new_window_via_keystroke(application_name):
-    subprocess.run(
-        [
-            "osascript",
-            "-e",
-            f'tell application "{application_name}" to activate\n'
-            f"delay 0.3\n"
-            f'tell application "System Events"\n'
-            f'    keystroke "n" using command down\n'
-            f"end tell",
-        ],
-        timeout=5,
-    )
-
-
 def launch_application(application_name):
-    subprocess.run(["open", "-a", application_name], timeout=5)
-
-
-def open_application_with_new_window_if_running(application_name):
-    if not is_application_currently_running(application_name):
-        launch_application(application_name)
-        return
-
-    wezterm_binary = find_wezterm_binary()
-    if application_name == "WezTerm" and wezterm_binary:
-        subprocess.Popen(
-            [wezterm_binary, "start"],
-            start_new_session=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        return
-
-    if application_name in APPLESCRIPT_MAKE_NEW_WINDOW_APPLICATIONS:
-        open_new_window_via_applescript(application_name)
-        return
-
-    open_new_window_via_keystroke(application_name)
+    subprocess.Popen(
+        ["open", "-a", application_name],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 def main():
@@ -237,7 +172,7 @@ def main():
     )
 
     record_application_launch_in_history(history, selected_application)
-    open_application_with_new_window_if_running(selected_application)
+    launch_application(selected_application)
 
 
 if __name__ == "__main__":
