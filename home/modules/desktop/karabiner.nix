@@ -22,7 +22,7 @@ in
 {
   home.activation.copyKarabinerConfig = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.config/karabiner"
-    cp -f ${karabinerConfigFile} "$HOME/.config/karabiner/karabiner.json"
+    cat ${karabinerConfigFile} > "$HOME/.config/karabiner/karabiner.json"
     chmod 644 "$HOME/.config/karabiner/karabiner.json"
   '';
 }
