@@ -14,3 +14,5 @@ For output compression and ultra-dense mode, read `tldr.md`.
 For compliance rule auditing, read `compliance.md`.
 
 For code review methodology, read `code-review.md`.
+
+For diagnosing and fixing skill routing failures, read `skill-routing.md`.

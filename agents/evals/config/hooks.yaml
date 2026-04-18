@@ -1,0 +1,37 @@
+tests:
+  - name: nix_rebuild_trigger_fires_on_nix_edit
+    type: hook_test
+    hook: nix-rebuild-trigger.py
+    trigger:
+      tool: Edit
+      file_path: "test.nix"
+    assertions:
+      hook_blocks: false
+      message_contains: "MANDATORY"
+
+  - name: pre_push_gate_blocks_without_checks
+    type: hook_test
+    hook: pre-push-ci-gate.py
+    trigger:
+      tool: Bash
+      command: "git push origin main"
+    assertions:
+      hook_blocks: true
+
+  - name: url_router_blocks_twitter_urls
+    type: hook_test
+    hook: url-to-skill-router.py
+    trigger:
+      tool: WebFetch
+      url: "https://x.com/user/status/123"
+    assertions:
+      hook_blocks: true
+      message_contains: "fxtwitter"
+
+  - name: task_completed_gate_checks_formatting
+    type: hook_test
+    hook: task-completed-quality-gate.py
+    trigger:
+      event: TaskCompleted
+    assertions:
+      hook_blocks: false

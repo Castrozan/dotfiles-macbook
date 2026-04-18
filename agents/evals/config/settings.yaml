@@ -1,0 +1,12 @@
+settings:
+  default_model: haiku
+  timeout_seconds: 120
+
+smoke_test:
+  name: basic_response
+  prompt: "What is 2+2?"
+  model: haiku
+  max_turns: 1
+  assertions:
+    output_contains:
+      - "4"
