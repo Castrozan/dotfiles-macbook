@@ -28,6 +28,7 @@
     ../../home/modules/desktop/theming.nix
     ../../home/modules/desktop/aerospace.nix
     ../../home/modules/desktop/application-launcher
+    ../../home/modules/desktop/workspace-navigator.nix
     ../../home/modules/desktop/workspace-switcher-client.nix
     ../../home/modules/desktop/fonts.nix
     ../../home/modules/desktop/karabiner.nix
