@@ -26,15 +26,21 @@ let
     archiveBinaryPath = "codex-${currentSystem.platform}";
   };
 
-  codex = pkgs.writeShellScriptBin "codex" ''
-    export NPM_CONFIG_PREFIX="/nonexistent"
-    exec ${codexUnwrapped}/bin/codex \
-      --model "gpt-5.4" \
-      --sandbox "danger-full-access" \
-      --ask-for-approval "never" \
-      --no-alt-screen \
-      "$@"
-  '';
+  codex = pkgs.symlinkJoin {
+    name = "codex-${version}";
+    paths = [
+      (pkgs.writeShellScriptBin "codex" ''
+        export NPM_CONFIG_PREFIX="/nonexistent"
+        exec ${codexUnwrapped}/bin/codex \
+          --model "gpt-5.4" \
+          --sandbox "danger-full-access" \
+          --ask-for-approval "never" \
+          --no-alt-screen \
+          "$@"
+      '')
+    ];
+    meta.priority = 4;
+  };
 in
 {
   home.packages = [ codex ];
