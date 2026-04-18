@@ -27,6 +27,7 @@
     ../../home/modules/desktop/theming.nix
     ../../home/modules/desktop/aerospace.nix
     ../../home/modules/desktop/application-launcher
+    ../../home/modules/desktop/workspace-switcher-client.nix
     ../../home/modules/desktop/fonts.nix
     ../../home/modules/desktop/karabiner.nix
     ../../home/modules/desktop/maccy.nix
@@ -40,6 +41,7 @@
     ../../home/modules/dev/scripts.nix
 
     ../../home/modules/terminal/bad-apple.nix
+    ../../home/modules/terminal/cbonsai.nix
     ../../home/modules/terminal/cmatrix.nix
 
     ../../home/modules/security/agenix.nix
