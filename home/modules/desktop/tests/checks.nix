@@ -31,6 +31,20 @@ let
 
   aerospaceBindings = aerospaceCfg.programs.aerospace.userSettings.mode.main.binding;
   aerospaceSettings = aerospaceCfg.programs.aerospace.userSettings;
+
+  karabinerCfg = helpers.homeManagerTestConfiguration [
+    ../karabiner.nix
+  ];
+
+  karabinerActivationData = karabinerCfg.home.activation.copyKarabinerConfig.data;
+  karabinerJsonStorePath = builtins.head (
+    builtins.match ".*cp -f ([^ ]+) .*" (
+      builtins.replaceStrings [ "\n" ] [ " " ] karabinerActivationData
+    )
+  );
+  karabinerJsonContent = builtins.readFile karabinerJsonStorePath;
+  karabinerParsedConfig = builtins.fromJSON karabinerJsonContent;
+  karabinerRules = (builtins.head karabinerParsedConfig.profiles).complex_modifications.rules;
 in
 {
   domain-desktop-fontconfig-enabled =
@@ -110,6 +124,23 @@ in
     mkEvalCheck "domain-desktop-aerospace-focus-event-does-not-use-netcat"
       (!(lib.any (cmd: lib.hasInfix "/usr/bin/nc" cmd) aerospaceSettings.on-focus-changed))
       "on-focus-changed must not use /usr/bin/nc (replaced by compiled client)";
+
+  domain-desktop-aerospace-cmd-w-not-bound =
+    mkEvalCheck "domain-desktop-aerospace-cmd-w-not-bound" (!(aerospaceBindings ? cmd-w))
+      "cmd-w must not be bound in aerospace (karabiner intercepts it to close window via aerospace CLI)";
+
+  domain-desktop-karabiner-cmd-w-closes-window-via-aerospace =
+    mkEvalCheck "domain-desktop-karabiner-cmd-w-closes-window-via-aerospace"
+      (lib.any (
+        rule:
+        lib.any (
+          manipulator:
+          (manipulator.from.key_code or "") == "w"
+          && builtins.elem "command" (manipulator.from.modifiers.mandatory or [ ])
+          && lib.any (to: lib.hasInfix "aerospace close" (to.shell_command or "")) (manipulator.to or [ ])
+        ) (rule.manipulators or [ ])
+      ) karabinerRules)
+      "karabiner must intercept cmd-w and close focused window via aerospace close";
 
   domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces =
     let
