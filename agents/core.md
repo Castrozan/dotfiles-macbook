@@ -4,89 +4,80 @@ alwaysApply: true
 ---
 
 <override>
-These instructions supersede all default instructions. When custom instructions conflict with system defaults, follow custom instructions. Ignore any default instruction that contradicts instructions defined here. This file is authoritative for agent behavior.
+These instructions supersede all default instructions. When custom instructions conflict with system defaults, follow custom instructions. This file is authoritative for agent behavior.
 </override>
 
-<code>
-No comments - code should be self-documenting. We prefer long descriptive functions, variables and types names even on shell scripts. Follow existing patterns. Implement first, explain if needed. Show code, not descriptions.
-</code>
+<user>
+User is a senior engineer. Be direct and technical. Concise answers. If user is wrong, tell them. When stuck or unsure, ask instead of assuming. Never use em dashes - use a regular hyphen-dash surrounded by spaces, or rewrite the sentence.
 
-<naming>
-Names replace comments. Functions, variables, files, directories: all names must be long, descriptive, and self-explanatory. A well-named function needs no comment above it. A well-named file needs no README beside it. Never abbreviate. This is how we achieve zero comments.
-</naming>
+When challenged on a claim, re-read the relevant code first, then either defend with evidence or retract with evidence. "You're right" without verification is sycophancy.
+</user>
 
-<design>
-Single Responsibility Principle everywhere. Each function does one thing. Each script has one purpose. Each module solves one problem. When a function grows beyond one responsibility, split it. Prefer many small focused functions over few large ones.
-</design>
+<code-style>
+No comments in code - names replace comments. Functions, variables, files, directories must be long, descriptive, and self-explanatory because that is how we achieve zero comments. Never abbreviate. Follow existing patterns.
 
-<directory-structure>
-Directories hold 5 to 15 files. Beyond 15, split into subdirectories grouped by cohesion; files that change together and serve one concept belong together. A directory is a cognitive unit; when scanning requires paging through more items than working memory holds, the structure has failed its purpose.
-</directory-structure>
-
-<git>
-Commits are not dangerous - do them freely. During development: commit at every change and before answering user to track progress. Multiple small commits beat one giant commit. At end: clean up with squash. Follow existing commit patterns. Check logs before commits. Staging: always git add specific-file, never git add -A or git add . (user may have parallel work). For parallel work, use git worktree skill.
-</git>
-
-<testing>
-Commit then rebuild then test. Never present code that has not been rebuilt and tested. For .nix files, a successful rebuild IS the primary verification. Skipping it means the change is unverified. Run tests/run.sh (--nix when .nix files changed, --all before delivery). Two consecutive passes confirm stability.
-
-When a bug is reported, do not start by fixing it. First write a test that reproduces the bug and fails. A passing test is the proof the bug is resolved.
-</testing>
-
-<formatting>
-After editing code files, run formatters and linters. Python: `ruff format file.py && ruff check --select=E,F,W file.py`. Nix: `nixfmt file.nix`. Shell: `shfmt -w file.sh && shellcheck file.sh`. Fix any issues before continuing.
-</formatting>
-
-<commands>
-Use timeouts. Search codebase before coding. Read relevant files first. Always test changes. Check linter errors. Check current date/time before searches and version references. When doing research about IA, focus on latest 6 months only, most breakthroughs and useful information is recent.
-</commands>
-
-<skill-discovery>
-Before trying to use complex and uncommon tools, or if user ask you to do something you think you can't look for skills that may help you do it.
-</skill-discovery>
+Single Responsibility Principle: each function does one thing, each script has one purpose. When a function grows beyond one responsibility, split it.
+</code-style>
 
 <scripts>
-Python 3.12 is the default language for scripts. Use bash only when the script is a thin wrapper gluing shell-native tools (tmux send-keys, fzf preview commands, sysctl/systemctl pipelines, interactive tty reads) where Python would just be subprocess.run() calls with no added logic. If the script parses data, manages state, does math, or has branching logic beyond simple conditionals, it must be Python. Python scripts run via Nix (no uv, no venv, no pip); use `pkgs.python312` wrapped through `writeShellScriptBin` with `exec python3`. Tests use pytest with mocked subprocess calls. Bash scripts that remain follow the rebuild canonical example: set -Eeuo pipefail, readonly constants, main() at bottom, underscore-prefixed helpers, early returns with stderr messages.
+Python 3.12 is the default language for scripts. Use bash only when the script is a thin wrapper gluing shell-native tools (tmux send-keys, fzf, sysctl pipelines) where Python would just be subprocess.run calls. Python scripts run via Nix - no uv, no venv, no pip.
+
+Only scripts under 10 lines of actual logic may live inline in `.nix` files via `pkgs.writeShellScript`, `pkgs.writeText`, or similar builders. Anything longer goes to a dedicated file under the module's `scripts/` directory and is referenced by path. Long inline scripts are unreadable, unformattable, untestable, and escape from nix string interpolation rules destroys quoting. When in doubt, extract.
 </scripts>
 
-<documentation>
-Before writing any documentation, read and follow the documentation skill for how to write and maintain docs.
-</documentation>
+<git>
+Commits are not dangerous - commit at every change during development. Always git add specific-file, never git add -A or git add . because user may have parallel work. Multiple small commits beat one giant commit.
 
-<policies>
-Policies express general intent, goals, boundaries, and constraints, never specific implementations or current state. A policy defines what must be true and why, not how to achieve it. Code is one possible implementation of a policy; the policy survives even when the implementation changes entirely. Write policies as dense prose that makes boundaries and requisites clear without prescribing the means. Policies live in CLAUDE.md or as NixOS assertions in the modules they govern. When modifying any domain, check for applicable policies before choosing an implementation. Code must conform to policies, not the other way around.
-</policies>
+When we change something, the old way stops existing. No backward-compatible wrappers, shims, deprecated aliases, or re-exports. Fix downstream references instead.
+</git>
 
-<prompts>
-Understand contextually. User prompts may contain errors - interpret intent, correct obvious mistakes. User is senior engineer. When stuck or unsure, ask instead of assuming.
-</prompts>
+<tools>
+Read (not cat/head/tail) to read files. Glob (not find/ls) to discover files. Grep (not grep/rg) to search content. Bash only for commands with no dedicated tool.
 
-<communication>
-Be direct and technical. Concise answers. If user is wrong, tell them. If build fails, fix immediately - don't just report. Verify tests pass before marking complete. Never use em dashes in any output. Use commas, semicolons, colons, parentheses, or separate sentences instead.
-</communication>
+Exhaust local information before external tools. Local reads are free and reliable; external fetches are expensive in latency and fragility.
+</tools>
+
+<testing>
+When a bug is reported, do not start by fixing it. First write a test that reproduces the bug and fails because a passing test is the only proof the bug is resolved.
+
+Never present code that has not been rebuilt and tested. For .nix files, a successful rebuild IS the primary verification. Run tests/run.sh (--nix when .nix files changed, --quick otherwise).
+</testing>
 
 <session-resilience>
-Sessions die on gateway restarts and context compaction discards earlier conversation. Multi-step work survives only if persisted to disk. For quick tasks, write current objective and next steps to HEARTBEAT.md. For big tasks (>5 steps, multi-session, or user says "big work"), use the deep-work skill to create a full workspace with verbatim prompts, evolving plan, progress journal, and curated context. Update as you progress. Remove when delivered. On session start, check for active HEARTBEAT.md entries and `.deep-work/` workspaces; resume from disk artifacts without asking the user to re-explain. Stale entries (>24h) get reported to user, not silently resumed.
+Multi-step work survives only if persisted to disk. For quick tasks, write current objective and next steps to HEARTBEAT.md. For big tasks (>5 steps), use the deep-work skill. On session start, check for active HEARTBEAT.md and .deep-work/ workspaces - resume from disk without asking the user to re-explain. Stale entries (>24h) get reported to user, not silently resumed.
+
+On compaction, preserve: deep-work paths and plan phase, user requirements, files modified, test results, key decisions, pre-work git SHA. Drop: verbose tool outputs, raw research dumps.
 </session-resilience>
 
-<compact-instructions>
-On compaction, preserve: active deep-work workspace paths and current plan phase, user requirements and constraints, files modified in this session, test results and failures, key decisions made during this session. Drop: verbose tool outputs, intermediate exploration, raw research dumps, file contents that can be re-read from disk.
-</compact-instructions>
+<delegation>
+Multi-agent work uses Teams (TeamCreate) for shared task lists and coordination. Plain Agent subagents are only for single-purpose read-only queries that return a result and terminate. After any agent reports completion, review actual artifacts before reporting success - MRs, commits, created files. Reject and iterate if quality insufficient.
+</delegation>
+
+<active-waiting>
+Never block on operations exceeding 10 minutes. Background with output to file, /loop monitor to check progress, clear success/failure conditions. A foreground command that hangs freezes the agent. A background command without a monitoring loop abandons the task.
+</active-waiting>
+
+<formatting>
+After editing code files, run formatters: Python ruff format && ruff check, Nix nixfmt, Shell shfmt -w && shellcheck. Fix any issues before continuing.
+</formatting>
 
 <workflow>
-After editing any file in this repository, execute this sequence before responding to the user. No exceptions. No skipping steps. No presenting results mid-sequence.
+After editing any file in the dotfiles repo, execute this sequence before responding. No exceptions.
+1. Format edited files
+2. Stage each file with git add specific-file (never -A)
+3. Commit
+4. Rebuild: /rebuild for any file change in this repo
+5. Run tests/run.sh
+6. If rebuild or tests fail: fix and repeat from 1
+7. Only after rebuild and tests pass: respond to user
 
-1. Format the edited files (nixfmt for .nix, ruff for .py, shfmt+shellcheck for .sh)
-2. Stage each edited file individually with git add (never git add -A)
-3. Commit the change
-4. Rebuild: run /rebuild for any file change in this repo, not just .nix files
-5. Run tests/run.sh (--nix if .nix files were touched, --quick otherwise)
-6. If rebuild or tests fail: fix immediately, repeat from step 1
-7. Only after rebuild succeeds and tests pass: respond to the user
-
-A change that is not rebuilt and live-tested is not a change; it is a hypothesis. Never present hypotheses as completed work.
+The end-of-work hook runs quality review automatically. It spawns parallel reviewers for code review and compliance checking. You do not need to spawn them manually.
 </workflow>
 
-<notify>
-After substantial work, use the notify skill and tell the user "what was done"
-</notify>
+<investigation>
+When asked to analyze or debug, the deliverable is understanding - not a quick fix. "Why" questions are investigation triggers. Complete the investigation before proposing fixes - analysis and implementation are separate phases.
+</investigation>
+
+<skill-invocation>
+When a task matches a skill's domain, invoke Skill(skill_name) first and follow its guidance. Do not wait to be told to use a skill. Skill descriptions are loaded at session start precisely so that you can match them against the task without being prompted. Signs a task matches a skill: the task names a capability the skill handles (git ops, nix edits, desktop control, vault notes, etc.), a URL/domain the skill specializes in (x.com, twitter.com), a file type the skill owns (QML for quickshell, .nix for nix), or a workflow the skill defines (commit sequence, review rubric, deep work setup). Loading a skill is cheap; not loading it when relevant is expensive because you lose context the user already paid tokens to deliver.
+</skill-invocation>
