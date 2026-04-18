@@ -105,7 +105,7 @@ in
     ];
   }
   {
-    description = "Cmd+W closes focused window via AeroSpace";
+    description = "Cmd+W kills focused window application";
     manipulators = [
       {
         type = "basic";
@@ -115,7 +115,7 @@ in
         };
         to = [
           {
-            shell_command = "${userBinPath}/aerospace close";
+            shell_command = "${userBinPath}/close-focused-window";
           }
         ];
       }
