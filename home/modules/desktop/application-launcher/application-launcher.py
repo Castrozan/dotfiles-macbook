@@ -154,13 +154,7 @@ def launch_application(application_name):
 def kill_existing_picker_processes():
     try:
         previous_picker_pid = int(PICKER_PID_FILE_PATH.read_text())
-        process_check = subprocess.run(
-            ["ps", "-p", str(previous_picker_pid), "-o", "comm="],
-            capture_output=True,
-            text=True,
-        )
-        if "fuzzy-picker" in process_check.stdout:
-            os.kill(previous_picker_pid, signal.SIGTERM)
+        os.kill(previous_picker_pid, signal.SIGTERM)
     except (
         FileNotFoundError,
         ValueError,

@@ -201,6 +201,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         controller.show()
     }
 
+    func applicationDidResignActive(_ notification: Notification) {
+        NSApp.terminate(nil)
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         if let result = controller?.selectedResult {
             FileHandle.standardOutput.write(Data((result + "\n").utf8))
