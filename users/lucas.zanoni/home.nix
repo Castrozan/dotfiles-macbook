@@ -12,6 +12,7 @@
     ../../home/modules/agents
 
     ../../home/modules/claude
+    ../../home/modules/codex
 
     ../../home/modules/terminal/atuin.nix
     ../../home/modules/terminal/fish.nix
