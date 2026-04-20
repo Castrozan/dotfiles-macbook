@@ -50,6 +50,8 @@ let
 
   applicationBindings = {
     cmd-f = "fullscreen";
+    cmd-b = "exec-and-forget ${userBinPath}/summon-brave";
+    cmd-c = "exec-and-forget ${userBinPath}/summon-chrome";
   };
 in
 {
