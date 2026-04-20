@@ -130,16 +130,7 @@ _build_context_window_segment_from_json_input() {
 		context_color="$COLOR_MAGENTA"
 	fi
 
-	local progress_bar_total_width=10
-	local filled_width=$((rounded_used_percentage * progress_bar_total_width / 100))
-	local empty_width=$((progress_bar_total_width - filled_width))
-
-	local filled_characters=""
-	local empty_characters=""
-	for ((i = 0; i < filled_width; i++)); do filled_characters+="█"; done
-	for ((i = 0; i < empty_width; i++)); do empty_characters+="░"; done
-
-	printf "${context_color}%s${COLOR_DIM}%s${COLOR_RESET} ${context_color}%s%%${COLOR_RESET}" "$filled_characters" "$empty_characters" "$rounded_used_percentage"
+	printf "${COLOR_DIM}ctx ${context_color}%s%%${COLOR_RESET}" "$rounded_used_percentage"
 }
 
 _build_session_cost_segment_from_json_input() {
@@ -161,15 +152,6 @@ _build_session_cost_segment_from_json_input() {
 	fi
 
 	printf "${cost_color}\$%s${COLOR_RESET}" "$formatted_cost"
-}
-
-_build_session_id_segment_from_json_input() {
-	local json_input="$1"
-	local session_id
-	session_id=$(echo "$json_input" | jq -r '.session_id // empty')
-	[ -z "$session_id" ] && return 0
-	local short_session_id="${session_id:0:8}"
-	printf "${COLOR_DIM}%s${COLOR_RESET}" "$short_session_id"
 }
 
 _build_session_name_segment_from_json_input() {
@@ -202,6 +184,17 @@ _build_agent_name_segment_from_json_input() {
 	agent_name=$(echo "$json_input" | jq -r '.agent.name // empty')
 	[ -z "$agent_name" ] && return 0
 	printf "${COLOR_BOLD}${COLOR_CYAN}⚡%s${COLOR_RESET}" "$agent_name"
+}
+
+_build_transcript_log_segment_from_json_input() {
+	local json_input="$1"
+	local transcript_path
+	transcript_path=$(echo "$json_input" | jq -r '.transcript_path // empty')
+	[ -z "$transcript_path" ] && return 0
+
+	local transcript_filename
+	transcript_filename=$(basename "$transcript_path")
+	printf "${COLOR_DIM}%s${COLOR_RESET}" "$transcript_filename"
 }
 
 _build_worktree_segment_from_json_input() {
@@ -255,7 +248,7 @@ _build_rate_limit_five_hour_segment_from_json_input() {
 		limit_color="$COLOR_GREEN"
 	fi
 
-	printf "${COLOR_DIM}limit ${limit_color}%s%%${COLOR_DIM} resets in%s${COLOR_RESET}" "$rounded_percentage" "$reset_remaining"
+	printf "${COLOR_DIM}lim ${limit_color}%s%%${COLOR_DIM}%s${COLOR_RESET}" "$rounded_percentage" "$reset_remaining"
 }
 
 _format_duration_from_milliseconds() {
@@ -284,7 +277,7 @@ _build_session_duration_segment_from_json_input() {
 	local formatted_duration
 	formatted_duration=$(_format_duration_from_milliseconds "$total_duration_ms")
 
-	printf "${COLOR_DIM}session %s${COLOR_RESET}" "$formatted_duration"
+	printf "${COLOR_DIM}%s${COLOR_RESET}" "$formatted_duration"
 }
 
 _build_lines_changed_segment_from_json_input() {
@@ -307,15 +300,14 @@ _build_lines_changed_segment_from_json_input() {
 	printf "%b" "$output"
 }
 
-_build_transcript_path_segment_from_json_input() {
-	local json_input="$1"
-	local transcript_path
-	transcript_path=$(echo "$json_input" | jq -r '.transcript_path // empty')
-	[ -z "$transcript_path" ] && return 0
+_visible_width_of_ansi_string() {
+	local stripped
+	stripped=$(printf "%s" "$1" | sed 's/\x1b\[[0-9;]*m//g')
+	echo "${#stripped}"
+}
 
-	local transcript_filename
-	transcript_filename=$(basename "$transcript_path")
-	printf "${COLOR_DIM}log %s${COLOR_RESET}" "$transcript_filename"
+_get_terminal_width() {
+	echo "${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}"
 }
 
 _render_statusline_from_json_input() {
@@ -323,45 +315,67 @@ _render_statusline_from_json_input() {
 	local current_working_directory
 	current_working_directory=$(echo "$json_input" | jq -r '.cwd')
 
-	local vim_mode_segment session_id_segment agent_name_segment worktree_segment
-	local session_name_segment git_segment model_segment
-	local session_cost_segment rate_limit_segment session_duration_segment
-	local lines_changed_segment context_window_segment transcript_path_segment
+	local vim_mode_segment agent_name_segment worktree_segment
+	local session_name_segment git_segment model_segment transcript_log_segment
 
 	vim_mode_segment=$(_build_vim_mode_segment_from_json_input "$json_input")
-	session_id_segment=$(_build_session_id_segment_from_json_input "$json_input")
 	agent_name_segment=$(_build_agent_name_segment_from_json_input "$json_input")
 	worktree_segment=$(_build_worktree_segment_from_json_input "$json_input")
 	session_name_segment=$(_build_session_name_segment_from_json_input "$json_input")
 	git_segment=$(_build_git_segment_from_repo_directory "$current_working_directory")
 	model_segment=$(_build_model_segment_from_json_input "$json_input")
+	transcript_log_segment=$(_build_transcript_log_segment_from_json_input "$json_input")
 
-	session_cost_segment=$(_build_session_cost_segment_from_json_input "$json_input")
-	rate_limit_segment=$(_build_rate_limit_five_hour_segment_from_json_input "$json_input")
-	session_duration_segment=$(_build_session_duration_segment_from_json_input "$json_input")
-	lines_changed_segment=$(_build_lines_changed_segment_from_json_input "$json_input")
-	context_window_segment=$(_build_context_window_segment_from_json_input "$json_input")
-	transcript_path_segment=$(_build_transcript_path_segment_from_json_input "$json_input")
+	local identity_line=""
+	identity_line=$(_append_segment_to_output "$identity_line" "$vim_mode_segment")
+	identity_line=$(_append_segment_to_output "$identity_line" "$agent_name_segment")
+	identity_line=$(_append_segment_to_output "$identity_line" "$worktree_segment")
+	identity_line=$(_append_segment_to_output "$identity_line" "$session_name_segment")
+	identity_line=$(_append_segment_to_output "$identity_line" "$git_segment")
+	identity_line=$(_append_segment_to_output "$identity_line" "$model_segment")
+	identity_line=$(_append_segment_to_output "$identity_line" "$transcript_log_segment")
 
-	local line_one=""
-	line_one=$(_append_segment_to_output "$line_one" "$vim_mode_segment")
-	line_one=$(_append_segment_to_output "$line_one" "$session_id_segment")
-	line_one=$(_append_segment_to_output "$line_one" "$agent_name_segment")
-	line_one=$(_append_segment_to_output "$line_one" "$worktree_segment")
-	line_one=$(_append_segment_to_output "$line_one" "$session_name_segment")
-	line_one=$(_append_segment_to_output "$line_one" "$git_segment")
-	line_one=$(_append_segment_to_output "$line_one" "$model_segment")
+	local session_has_activity
+	session_has_activity=$(echo "$json_input" | jq -r 'if (.cost.total_cost_usd // 0) > 0 then "true" else "false" end')
 
-	local line_two=""
-	line_two=$(_append_segment_to_output "$line_two" "$session_cost_segment")
-	line_two=$(_append_segment_to_output "$line_two" "$rate_limit_segment")
-	line_two=$(_append_segment_to_output "$line_two" "$session_duration_segment")
-	line_two=$(_append_segment_to_output "$line_two" "$lines_changed_segment")
-	line_two=$(_append_segment_to_output "$line_two" "$context_window_segment")
-	line_two=$(_append_segment_to_output "$line_two" "$transcript_path_segment")
+	local metrics_line=""
+	if [ "$session_has_activity" = "true" ]; then
+		local session_cost_segment rate_limit_segment session_duration_segment
+		local lines_changed_segment context_window_segment
 
-	printf "%b\n" "$line_one"
-	printf "%b" "$line_two"
+		session_cost_segment=$(_build_session_cost_segment_from_json_input "$json_input")
+		rate_limit_segment=$(_build_rate_limit_five_hour_segment_from_json_input "$json_input")
+		session_duration_segment=$(_build_session_duration_segment_from_json_input "$json_input")
+		lines_changed_segment=$(_build_lines_changed_segment_from_json_input "$json_input")
+		context_window_segment=$(_build_context_window_segment_from_json_input "$json_input")
+
+		metrics_line=$(_append_segment_to_output "$metrics_line" "$session_cost_segment")
+		metrics_line=$(_append_segment_to_output "$metrics_line" "$session_duration_segment")
+		metrics_line=$(_append_segment_to_output "$metrics_line" "$lines_changed_segment")
+		metrics_line=$(_append_segment_to_output "$metrics_line" "$context_window_segment")
+		metrics_line=$(_append_segment_to_output "$metrics_line" "$rate_limit_segment")
+	fi
+
+	if [ -z "$metrics_line" ]; then
+		printf "%b" "$identity_line"
+		return 0
+	fi
+
+	local single_line
+	single_line=$(_append_segment_to_output "$identity_line" "$metrics_line")
+
+	local terminal_width
+	terminal_width=$(_get_terminal_width)
+
+	local single_line_width
+	single_line_width=$(_visible_width_of_ansi_string "$single_line")
+
+	if [ "$single_line_width" -le "$terminal_width" ]; then
+		printf "%b" "$single_line"
+	else
+		printf "%b\n" "$identity_line"
+		printf "%b" "$metrics_line"
+	fi
 }
 
 main() {
