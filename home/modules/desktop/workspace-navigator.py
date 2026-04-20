@@ -57,6 +57,10 @@ def build_navigable_workspaces(total_workspaces, focused_workspace, visible_work
 
 
 def calculate_adjacent_workspace_with_wraparound(current, all_workspaces, direction):
+    if current not in all_workspaces:
+        if direction == "next":
+            return all_workspaces[0]
+        return all_workspaces[-1]
     current_index = all_workspaces.index(current)
     if direction == "next":
         adjacent_index = (current_index + 1) % len(all_workspaces)

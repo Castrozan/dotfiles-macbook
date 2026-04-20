@@ -31,6 +31,18 @@ class TestCalculateAdjacentWorkspaceWithWraparound:
         )
         assert result == 7
 
+    def test_next_from_out_of_range_goes_to_first(self):
+        result = workspace_navigator.calculate_adjacent_workspace_with_wraparound(
+            8, self.all_workspaces, "next"
+        )
+        assert result == 1
+
+    def test_prev_from_out_of_range_goes_to_last(self):
+        result = workspace_navigator.calculate_adjacent_workspace_with_wraparound(
+            8, self.all_workspaces, "prev"
+        )
+        assert result == 7
+
 
 class TestParseMonitorsWithNames:
     def test_parses_single_monitor(self):
