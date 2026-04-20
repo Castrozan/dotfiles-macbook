@@ -119,21 +119,25 @@ in
       '';
     };
 
-    activation.removeNativeInstallMethodFromClaudeJson = {
-      after = [ "writeBoundary" ];
+    activation.removeNativeInstallMethodFromClaudeConfigs = {
+      after = [
+        "writeBoundary"
+        "seedClaudeSettingsAsMutableFile"
+      ];
       before = [ ];
       data = ''
-        CLAUDE_JSON="$HOME/.claude.json"
-        if [ -f "$CLAUDE_JSON" ]; then
-          if ! ${pkgs.jq}/bin/jq '.' "$CLAUDE_JSON" >/dev/null 2>&1; then
-            echo "WARNING: $CLAUDE_JSON is corrupt, skipping patch" >&2
-          else
-            if ${pkgs.jq}/bin/jq -e '.installMethod' "$CLAUDE_JSON" >/dev/null 2>&1; then
-              PATCHED_CONTENT=$(${pkgs.jq}/bin/jq 'del(.installMethod)' "$CLAUDE_JSON")
-              echo "$PATCHED_CONTENT" > "$CLAUDE_JSON.tmp" && mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
+        for TARGET_FILE in "$HOME/.claude.json" "$HOME/.claude/settings.json"; do
+          if [ -f "$TARGET_FILE" ]; then
+            if ! ${pkgs.jq}/bin/jq '.' "$TARGET_FILE" >/dev/null 2>&1; then
+              echo "WARNING: $TARGET_FILE is corrupt, skipping patch" >&2
+            else
+              if ${pkgs.jq}/bin/jq -e '.installMethod' "$TARGET_FILE" >/dev/null 2>&1; then
+                PATCHED_CONTENT=$(${pkgs.jq}/bin/jq 'del(.installMethod)' "$TARGET_FILE")
+                echo "$PATCHED_CONTENT" > "$TARGET_FILE.tmp" && mv "$TARGET_FILE.tmp" "$TARGET_FILE"
+              fi
             fi
           fi
-        fi
+        done
       '';
     };
   };
