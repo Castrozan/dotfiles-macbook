@@ -109,6 +109,22 @@ in
       (!(lib.any (cmd: lib.hasInfix "/usr/bin/nc" cmd) aerospaceSettings.on-focus-changed))
       "on-focus-changed must not use /usr/bin/nc (replaced by compiled client)";
 
+  domain-desktop-karabiner-ctrl-space-remapped-to-ctrl-shift-backslash-in-terminals =
+    mkEvalCheck "domain-desktop-karabiner-ctrl-space-remapped-to-ctrl-shift-backslash-in-terminals"
+      (lib.any (
+        rule:
+        lib.any (
+          manipulator:
+          (manipulator.from.key_code or "") == "spacebar"
+          && builtins.elem "control" (manipulator.from.modifiers.mandatory or [ ])
+          && lib.any (to: (to.key_code or "") == "backslash" && builtins.elem "shift" (to.modifiers or [ ])) (
+            manipulator.to or [ ]
+          )
+          && lib.any (cond: (cond.type or "") == "frontmost_application_if") (manipulator.conditions or [ ])
+        ) (rule.manipulators or [ ])
+      ) karabinerRules)
+      "karabiner must remap Ctrl+Space to Ctrl+Shift+Backslash in terminals (macOS intercepts Ctrl+Space)";
+
   domain-desktop-aerospace-cmd-w-not-bound =
     mkEvalCheck "domain-desktop-aerospace-cmd-w-not-bound" (!(aerospaceBindings ? cmd-w))
       "cmd-w must not be bound in aerospace (karabiner intercepts it to close window via aerospace CLI)";

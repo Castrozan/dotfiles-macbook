@@ -60,6 +60,12 @@ let
 
   weztermShiftEnterNotOverridden = !(lib.hasInfix "key = 'Enter', mods = 'SHIFT'" weztermLuaContent);
 
+  weztermHasTermWezterm = lib.hasInfix "term = 'wezterm'" weztermLuaContent;
+
+  tmuxBindsContent = builtins.readFile ../../../../.config/tmux/binds.conf;
+
+  tmuxCopyModeHasControlBackslashBeginSelection = lib.hasInfix "C-\\\\ send-keys -X begin-selection" tmuxBindsContent;
+
   screensaverContent = builtins.readFile ../shell/screensaver.sh;
   tmuxMainContent = builtins.readFile ../shell/tmux_main.sh;
   bashrcWithDependenciesFirst = builtins.concatStringsSep "\n" [
@@ -132,4 +138,13 @@ in
   domain-terminal-wezterm-shift-enter-not-overridden =
     mkEvalCheck "domain-terminal-wezterm-shift-enter-not-overridden" weztermShiftEnterNotOverridden
       "wezterm must not override Shift+Enter; CSI-u encoding handles it for Claude Code newlines";
+
+  domain-terminal-wezterm-term-set-to-wezterm =
+    mkEvalCheck "domain-terminal-wezterm-term-set-to-wezterm" weztermHasTermWezterm
+      "wezterm must set term = 'wezterm' so tmux terminal-features wezterm*:extkeys pattern matches";
+
+  domain-terminal-tmux-copy-mode-control-backslash-begins-selection =
+    mkEvalCheck "domain-terminal-tmux-copy-mode-control-backslash-begins-selection"
+      tmuxCopyModeHasControlBackslashBeginSelection
+      "tmux copy-mode must bind C-\\\\ to begin-selection (Ctrl+Space workaround via Karabiner remap)";
 }
