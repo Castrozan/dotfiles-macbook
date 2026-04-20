@@ -190,7 +190,7 @@ in
         ];
   }
   {
-    description = "Ctrl+Space to F20 in terminals (bypasses macOS input method interception)";
+    description = "Ctrl+Space to Ctrl+Shift+F6 in terminals (bypasses macOS input method interception)";
     manipulators = [
       {
         type = "basic";
@@ -200,7 +200,11 @@ in
         };
         to = [
           {
-            key_code = "f20";
+            key_code = "f6";
+            modifiers = [
+              "control"
+              "shift"
+            ];
           }
         ];
         conditions = onlyTerminalsCondition;
