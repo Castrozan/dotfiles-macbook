@@ -17,7 +17,6 @@ let
   };
 
   claudeGlobalSettings = {
-    installMethod = "native";
     model = "opus";
     effortLevel = "high";
     language = "english";
@@ -120,7 +119,7 @@ in
       '';
     };
 
-    activation.patchClaudeJsonInstallMethod = {
+    activation.removeNativeInstallMethodFromClaudeJson = {
       after = [ "writeBoundary" ];
       before = [ ];
       data = ''
@@ -129,14 +128,11 @@ in
           if ! ${pkgs.jq}/bin/jq '.' "$CLAUDE_JSON" >/dev/null 2>&1; then
             echo "WARNING: $CLAUDE_JSON is corrupt, skipping patch" >&2
           else
-            PATCHED_CONTENT=$(${pkgs.jq}/bin/jq '.installMethod = "native"' "$CLAUDE_JSON")
-            CURRENT_CONTENT=$(cat "$CLAUDE_JSON")
-            if [ "$PATCHED_CONTENT" != "$CURRENT_CONTENT" ]; then
+            if ${pkgs.jq}/bin/jq -e '.installMethod' "$CLAUDE_JSON" >/dev/null 2>&1; then
+              PATCHED_CONTENT=$(${pkgs.jq}/bin/jq 'del(.installMethod)' "$CLAUDE_JSON")
               echo "$PATCHED_CONTENT" > "$CLAUDE_JSON.tmp" && mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
             fi
           fi
-        else
-          echo '{"installMethod": "native"}' > "$CLAUDE_JSON"
         fi
       '';
     };
