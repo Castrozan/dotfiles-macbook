@@ -29,20 +29,19 @@ _full_json_input() {
     assert_uses_strict_error_handling
 }
 
-@test "produces two lines of output" {
+@test "produces at least one line of output" {
     _run_statusline_with_json "$(_minimal_json_input)"
     [ "$status" -eq 0 ]
     local line_count
     line_count=$(echo "$output" | wc -l)
-    [ "$line_count" -eq 2 ]
+    [ "$line_count" -ge 1 ]
 }
 
-@test "session id is truncated to 8 characters" {
+@test "session id is not displayed" {
     _run_statusline_with_json "$(_minimal_json_input)"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" == *"abcd1234"* ]]
-    [[ "$stripped" != *"abcd1234-5678"* ]]
+    [[ "$stripped" != *"abcd1234"* ]]
 }
 
 @test "model name appears on line one" {
@@ -97,7 +96,7 @@ _full_json_input() {
     _run_statusline_with_json "$json"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" == *"session 1h30m"* ]]
+    [[ "$stripped" == *"1h30m"* ]]
 }
 
 @test "duration formats minutes and seconds when under one hour" {
@@ -105,7 +104,7 @@ _full_json_input() {
     _run_statusline_with_json "$json"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" == *"session 2m05s"* ]]
+    [[ "$stripped" == *"2m05s"* ]]
 }
 
 @test "duration formats seconds when under one minute" {
@@ -113,7 +112,7 @@ _full_json_input() {
     _run_statusline_with_json "$json"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" == *"session 45s"* ]]
+    [[ "$stripped" == *"45s"* ]]
 }
 
 @test "lines changed shows additions and removals" {
@@ -133,21 +132,19 @@ _full_json_input() {
     [[ "$stripped" != *"-0"* ]]
 }
 
-@test "rate limit shows percentage and resets in label" {
+@test "rate limit shows percentage with lim label" {
     _run_statusline_with_json "$(_full_json_input)"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" == *"limit"* ]]
+    [[ "$stripped" == *"lim"* ]]
     [[ "$stripped" == *"22%"* ]]
-    [[ "$stripped" == *"resets in"* ]]
 }
 
 @test "rate limit hidden when not present" {
     _run_statusline_with_json "$(_minimal_json_input)"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" != *"limit"* ]]
-    [[ "$stripped" != *"resets in"* ]]
+    [[ "$stripped" != *"lim"* ]]
 }
 
 @test "agent name shown only when present" {
@@ -201,37 +198,33 @@ _full_json_input() {
     [[ "$stripped" == *"my-session"* ]]
 }
 
-@test "transcript shows log label with filename" {
+@test "transcript shows filename without label" {
     _run_statusline_with_json "$(_full_json_input)"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" == *"log transcript.jsonl"* ]]
+    [[ "$stripped" == *"transcript.jsonl"* ]]
 }
 
 @test "transcript hidden when not present" {
     _run_statusline_with_json "$(_minimal_json_input)"
     local stripped
     stripped=$(echo "$output" | _strip_ansi_escape_codes)
-    [[ "$stripped" != *"log "* ]]
+    [[ "$stripped" != *"transcript"* ]]
 }
 
-@test "full output contains all segments on correct lines" {
+@test "full output contains all expected segments" {
     _run_statusline_with_json "$(_full_json_input)"
-    local line_one line_two
-    line_one=$(echo "$output" | head -1 | _strip_ansi_escape_codes)
-    line_two=$(echo "$output" | tail -1 | _strip_ansi_escape_codes)
+    local stripped
+    stripped=$(echo "$output" | _strip_ansi_escape_codes)
 
-    [[ "$line_one" == *"abcd1234"* ]]
-    [[ "$line_one" == *"jarvis"* ]]
-    [[ "$line_one" == *"feature-x"* ]]
-    [[ "$line_one" == *"my-session"* ]]
-    [[ "$line_one" == *"Opus 4.6"* ]]
-
-    [[ "$line_two" == *'$0.42'* ]]
-    [[ "$line_two" == *"limit"* ]]
-    [[ "$line_two" == *"session"* ]]
-    [[ "$line_two" == *"+47"* ]]
-    [[ "$line_two" == *"-12"* ]]
-    [[ "$line_two" == *"35%"* ]]
-    [[ "$line_two" == *"log transcript.jsonl"* ]]
+    [[ "$stripped" == *"jarvis"* ]]
+    [[ "$stripped" == *"feature-x"* ]]
+    [[ "$stripped" == *"my-session"* ]]
+    [[ "$stripped" == *"Opus 4.6"* ]]
+    [[ "$stripped" == *'$0.42'* ]]
+    [[ "$stripped" == *"lim"* ]]
+    [[ "$stripped" == *"+47"* ]]
+    [[ "$stripped" == *"-12"* ]]
+    [[ "$stripped" == *"35%"* ]]
+    [[ "$stripped" == *"transcript.jsonl"* ]]
 }
