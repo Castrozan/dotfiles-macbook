@@ -61,7 +61,7 @@ def make_aerospace_mock(
     def mock_run_aerospace_command(*args):
         if args == ("list-workspaces", "--focused"):
             return str(focused_workspace)
-        if args == ("list-workspaces", "--visible"):
+        if args == ("list-workspaces", "--monitor", "all", "--visible"):
             return "\n".join(str(w) for w in visible_workspaces)
         if args == ("list-monitors",):
             return "\n".join(

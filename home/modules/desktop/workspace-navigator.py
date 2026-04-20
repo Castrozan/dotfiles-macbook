@@ -17,7 +17,7 @@ def get_focused_workspace_number():
 
 
 def get_visible_workspace_numbers():
-    output = run_aerospace_command("list-workspaces", "--visible")
+    output = run_aerospace_command("list-workspaces", "--monitor", "all", "--visible")
     return [int(line) for line in output.split("\n") if line.strip()]
 
 
