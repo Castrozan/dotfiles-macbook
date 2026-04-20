@@ -26,6 +26,12 @@ _ensure_darwin_rebuild_available() {
 	fi
 }
 
+_reload_aerospace_config() {
+	if command -v aerospace &>/dev/null; then
+		aerospace reload-config
+	fi
+}
+
 _stage_unstaged_nix_files() {
 	local unstaged_nix_files
 	unstaged_nix_files=$(git -C "$DOTFILES_DIRECTORY" diff --name-only -- '*.nix' 2>/dev/null || true)
@@ -45,6 +51,9 @@ main() {
 
 	echo "rebuilding darwin configuration from ${FLAKE_REFERENCE}..." >&2
 	sudo darwin-rebuild switch --flake "$FLAKE_REFERENCE" "$@"
+
+	_reload_aerospace_config
+
 	echo "rebuild complete" >&2
 }
 
