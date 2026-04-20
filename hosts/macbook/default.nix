@@ -6,6 +6,7 @@
 }:
 {
   imports = [
+    ./displays.nix
     ./finder.nix
     ./yabai.nix
     ./symbolic-hotkeys.nix
