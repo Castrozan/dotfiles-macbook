@@ -190,7 +190,7 @@ in
         ];
   }
   {
-    description = "Ctrl+Space to Ctrl+Shift+F6 in terminals (bypasses macOS input method interception)";
+    description = "Ctrl+Space to Ctrl+Shift+Backslash in terminals (bypasses macOS input method interception)";
     manipulators = [
       {
         type = "basic";
@@ -200,7 +200,7 @@ in
         };
         to = [
           {
-            key_code = "f6";
+            key_code = "backslash";
             modifiers = [
               "control"
               "shift"
