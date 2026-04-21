@@ -41,8 +41,11 @@ let
 
   controlToCommandLetters = [
     "a"
+    "b"
+    "c"
     "d"
     "e"
+    "f"
     "g"
     "i"
     "j"
@@ -256,6 +259,57 @@ in
           "left_arrow"
           "right_arrow"
         ];
+  }
+  {
+    description = "Cmd+B summons Brave Browser";
+    manipulators = [
+      {
+        type = "basic";
+        from = {
+          key_code = "b";
+          modifiers.mandatory = [ "command" ];
+        };
+        to = [
+          {
+            shell_command = "${userBinPath}/summon-brave";
+          }
+        ];
+      }
+    ];
+  }
+  {
+    description = "Cmd+C summons Chrome";
+    manipulators = [
+      {
+        type = "basic";
+        from = {
+          key_code = "c";
+          modifiers.mandatory = [ "command" ];
+        };
+        to = [
+          {
+            shell_command = "${userBinPath}/summon-chrome";
+          }
+        ];
+      }
+    ];
+  }
+  {
+    description = "Cmd+F toggles fullscreen via AeroSpace";
+    manipulators = [
+      {
+        type = "basic";
+        from = {
+          key_code = "f";
+          modifiers.mandatory = [ "command" ];
+        };
+        to = [
+          {
+            shell_command = "aerospace fullscreen";
+          }
+        ];
+      }
+    ];
   }
   {
     description = "Ctrl+Click to Cmd+Click (except in terminals)";

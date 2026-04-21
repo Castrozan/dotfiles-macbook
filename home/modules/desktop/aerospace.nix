@@ -48,11 +48,6 @@ let
     cmd-alt-shift-right = "exec-and-forget ${userBinPath}/workspace-navigate next ${totalWorkspaces} --move-window";
   };
 
-  applicationBindings = {
-    cmd-f = "fullscreen";
-    cmd-b = "exec-and-forget ${userBinPath}/summon-brave";
-    cmd-c = "exec-and-forget ${userBinPath}/summon-chrome";
-  };
 in
 {
   programs.aerospace = {
@@ -90,11 +85,7 @@ in
       };
 
       mode.main.binding =
-        workspaceSwitchBindings
-        // workspaceMoveBindings
-        // focusBindings
-        // workspaceNavigationBindings
-        // applicationBindings;
+        workspaceSwitchBindings // workspaceMoveBindings // focusBindings // workspaceNavigationBindings;
     };
   };
 }

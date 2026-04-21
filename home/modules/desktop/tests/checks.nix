@@ -33,6 +33,10 @@ let
   aerospaceSettings = aerospaceCfg.programs.aerospace.userSettings;
 
   karabinerRules = import ../karabiner-rules.nix { username = "test"; };
+
+  allLowercaseLetters = builtins.genList (i: builtins.substring i 1 "abcdefghijklmnopqrstuvwxyz") 26;
+
+  aerospaceBindsCmdLetter = lib.any (letter: aerospaceBindings ? "cmd-${letter}") allLowercaseLetters;
 in
 {
   domain-desktop-fontconfig-enabled =
@@ -156,4 +160,34 @@ in
     mkEvalCheck "domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces"
       (aerospaceSettings.after-startup-command == expectedStartupCommands)
       "after-startup-command should set accordion layout on every workspace 1-7 and return to workspace 1";
+
+  domain-desktop-aerospace-no-cmd-letter-bindings =
+    mkEvalCheck "domain-desktop-aerospace-no-cmd-letter-bindings" (!aerospaceBindsCmdLetter)
+      "aerospace must not bind cmd+letter keys (all cmd+letter WM bindings go through karabiner to avoid ctrl-to-cmd remapping conflicts)";
+
+  domain-desktop-karabiner-cmd-b-summons-brave =
+    mkEvalCheck "domain-desktop-karabiner-cmd-b-summons-brave"
+      (lib.any (
+        rule:
+        lib.any (
+          manipulator:
+          (manipulator.from.key_code or "") == "b"
+          && builtins.elem "command" (manipulator.from.modifiers.mandatory or [ ])
+          && lib.any (to: lib.hasInfix "summon-brave" (to.shell_command or "")) (manipulator.to or [ ])
+        ) (rule.manipulators or [ ])
+      ) karabinerRules)
+      "karabiner must intercept cmd-b to summon Brave Browser";
+
+  domain-desktop-karabiner-cmd-c-summons-chrome =
+    mkEvalCheck "domain-desktop-karabiner-cmd-c-summons-chrome"
+      (lib.any (
+        rule:
+        lib.any (
+          manipulator:
+          (manipulator.from.key_code or "") == "c"
+          && builtins.elem "command" (manipulator.from.modifiers.mandatory or [ ])
+          && lib.any (to: lib.hasInfix "summon-chrome" (to.shell_command or "")) (manipulator.to or [ ])
+        ) (rule.manipulators or [ ])
+      ) karabinerRules)
+      "karabiner must intercept cmd-c to summon Chrome";
 }
