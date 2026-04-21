@@ -41,8 +41,6 @@ let
 
   controlToCommandLetters = [
     "a"
-    "b"
-    "c"
     "d"
     "e"
     "g"
