@@ -295,23 +295,6 @@ in
     ];
   }
   {
-    description = "Cmd+F toggles fullscreen via AeroSpace";
-    manipulators = [
-      {
-        type = "basic";
-        from = {
-          key_code = "f";
-          modifiers.mandatory = [ "command" ];
-        };
-        to = [
-          {
-            shell_command = "aerospace fullscreen";
-          }
-        ];
-      }
-    ];
-  }
-  {
     description = "Ctrl+Click to Cmd+Click (except in terminals)";
     manipulators = [
       {
