@@ -10,6 +10,7 @@
     ./finder.nix
     ./yabai.nix
     ./symbolic-hotkeys.nix
+    ./quit-windowless-applications.nix
     ./workspace-window-switcher.nix
     ./scripts/rebuild.nix
   ];
