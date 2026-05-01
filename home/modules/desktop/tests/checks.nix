@@ -148,6 +148,13 @@ in
       ) karabinerRules)
       "karabiner must intercept cmd-w and kill focused window application via close-focused-window script";
 
+  domain-desktop-aerospace-on-window-detected-forces-fullscreen-on-all-new-windows =
+    mkEvalCheck "domain-desktop-aerospace-on-window-detected-forces-fullscreen-on-all-new-windows"
+      (lib.any (
+        rule: builtins.elem "fullscreen on" (rule.run or [ ]) && !(rule ? "if")
+      ) aerospaceSettings.on-window-detected)
+      "on-window-detected must contain an unconditional rule running 'fullscreen on' so every new window opens fullscreen";
+
   domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces =
     let
       expectedStartupCommands =

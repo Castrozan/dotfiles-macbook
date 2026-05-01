@@ -71,6 +71,12 @@ in
       ];
       on-focused-monitor-changed = [ "move-mouse monitor-lazy-center" ];
 
+      on-window-detected = [
+        {
+          run = [ "fullscreen on" ];
+        }
+      ];
+
       gaps = {
         inner = {
           horizontal = 0;
