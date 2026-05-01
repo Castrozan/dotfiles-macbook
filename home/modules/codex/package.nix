@@ -2,7 +2,7 @@
 let
   fetchPrebuiltBinary = import ../../../lib/fetch-prebuilt-binary.nix { inherit pkgs; };
 
-  version = "0.121.0";
+  version = "0.128.0";
 
   platformBinaryHashBySystem = {
     "x86_64-linux" = {
@@ -11,7 +11,7 @@ let
     };
     "aarch64-darwin" = {
       platform = "aarch64-apple-darwin";
-      sha256 = "sha256-YPcDnmOn3orkdBNqxvWT7BqRPh3coN9ZreH21utff9A=";
+      sha256 = "sha256-LI/ffwE9Lapw3MgQRPih32v6WMFnuRzMNxWEHINaZyY=";
     };
   };
 
