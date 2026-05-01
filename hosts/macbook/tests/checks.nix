@@ -16,7 +16,7 @@ let
   symbolicHotKeys =
     symbolicHotKeysConfig.system.defaults.CustomUserPreferences."com.apple.symbolichotkeys".AppleSymbolicHotKeys;
 
-  windowManagerConfig = import ../yabai.nix;
+  windowManagerConfig = import ../apple-window-manager.nix;
   windowManager = windowManagerConfig.system.defaults.CustomUserPreferences."com.apple.WindowManager";
 
   finderConfig = import ../finder.nix;

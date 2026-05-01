@@ -8,7 +8,7 @@
   imports = [
     ./displays.nix
     ./finder.nix
-    ./yabai.nix
+    ./apple-window-manager.nix
     ./symbolic-hotkeys.nix
     ./quit-windowless-applications.nix
     ./workspace-window-switcher.nix
