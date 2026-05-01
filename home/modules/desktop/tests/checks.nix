@@ -190,4 +190,19 @@ in
         ) (rule.manipulators or [ ])
       ) karabinerRules)
       "karabiner must intercept cmd-c to summon Chrome";
+
+  domain-desktop-karabiner-cmd-f-toggles-aerospace-fullscreen =
+    mkEvalCheck "domain-desktop-karabiner-cmd-f-toggles-aerospace-fullscreen"
+      (lib.any (
+        rule:
+        lib.any (
+          manipulator:
+          (manipulator.from.key_code or "") == "f"
+          && builtins.elem "command" (manipulator.from.modifiers.mandatory or [ ])
+          && lib.any (to: lib.hasInfix "aerospace fullscreen" (to.shell_command or "")) (
+            manipulator.to or [ ]
+          )
+        ) (rule.manipulators or [ ])
+      ) karabinerRules)
+      "karabiner must intercept cmd-f and toggle fullscreen via aerospace fullscreen";
 }

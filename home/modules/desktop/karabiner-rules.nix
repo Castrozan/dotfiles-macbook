@@ -278,6 +278,23 @@ in
     ];
   }
   {
+    description = "Cmd+F toggles fullscreen on focused window via AeroSpace";
+    manipulators = [
+      {
+        type = "basic";
+        from = {
+          key_code = "f";
+          modifiers.mandatory = [ "command" ];
+        };
+        to = [
+          {
+            shell_command = "${userBinPath}/aerospace fullscreen";
+          }
+        ];
+      }
+    ];
+  }
+  {
     description = "Cmd+C summons Chrome";
     manipulators = [
       {
