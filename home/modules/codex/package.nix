@@ -11,7 +11,7 @@ let
     };
     "aarch64-darwin" = {
       platform = "aarch64-apple-darwin";
-      sha256 = "sha256-LI/ffwE9Lapw3MgQRPih32v6WMFnuRzMNxWEHINaZyY=";
+      sha256 = "sha256-8GggLoqJjCQMjAaEAbzNMLp7VvYfX/zRSD1UXUeq89U=";
     };
   };
 
