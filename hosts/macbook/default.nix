@@ -37,6 +37,26 @@
         "com.apple.AppleMultitouchTrackpad"."TrackpadFiveFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFourFingerPinchGesture" = 0;
         "com.apple.driver.AppleBluetoothMultitouch.trackpad"."TrackpadFiveFingerPinchGesture" = 0;
+        "com.apple.HIToolbox" = {
+          AppleEnabledInputSources = [
+            {
+              "Bundle ID" = "com.apple.CharacterPaletteIM";
+              InputSourceKind = "Non Keyboard Input Method";
+            }
+            {
+              InputSourceKind = "Keyboard Layout";
+              "KeyboardLayout ID" = 10;
+              "KeyboardLayout Name" = "Portuguese";
+            }
+          ];
+          AppleSelectedInputSources = [
+            {
+              InputSourceKind = "Keyboard Layout";
+              "KeyboardLayout ID" = 10;
+              "KeyboardLayout Name" = "Portuguese";
+            }
+          ];
+        };
       };
       NSGlobalDomain = {
         "com.apple.swipescrolldirection" = false;
