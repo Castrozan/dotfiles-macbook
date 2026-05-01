@@ -8,11 +8,11 @@ description: Manage Jira issues, sprints, epics, and boards via jira-cli. Use wh
 </announcement>
 
 <auth>
-Token is managed by agenix and exported as JIRA_API_TOKEN. Config lives at ~/.config/.jira/.config.yml, deployed by home-manager. Auth type is `bearer` for cloud API tokens. If commands fail with auth errors, verify the token is sourced (rebuild activates agenix secrets).
+Token is managed by agenix at ~/.secrets/jira-api-token and exposed as JIRA_API_TOKEN in interactive fish shells. Config lives at ~/.config/.jira/.config.yml, deployed by home-manager. Auth type is `basic` for cloud (email + API token). The helper script auto-loads the token from the secret file, so callers do not need to source secrets first; raw jira-cli does require JIRA_API_TOKEN in the environment.
 </auth>
 
 <helper_script>
-The scripts/ directory contains a Python helper that wraps jira-cli with consistent flags (always passes --no-input and --plain). Run with `--help` to see available subcommands. Prefer the helper for automation; use jira-cli directly for interactive workflows or JQL queries not covered by the helper.
+The scripts/ directory contains a Python helper that wraps jira-cli with consistent flags (always passes --no-input and --plain) and self-loads JIRA_API_TOKEN from ~/.secrets/jira-api-token when not already in the environment. Run with `--help` to see available subcommands. Prefer the helper for automation; use jira-cli directly for interactive workflows or JQL queries not covered by the helper.
 </helper_script>
 
 <non_interactive_trap>
