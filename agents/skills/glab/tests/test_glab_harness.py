@@ -1,7 +1,7 @@
 import json
 import urllib.error
 import urllib.request
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -52,22 +52,22 @@ class TestResolveGitlabToken:
         monkeypatch.setenv("GITLAB_TOKEN", "env-token")
         assert glab_harness.resolve_gitlab_token() == "env-token"
 
-    def test_exits_when_no_token_and_no_secrets_file(self, monkeypatch, tmp_path):
+    def test_exits_when_no_token_and_no_secret_file(self, monkeypatch, tmp_path):
         monkeypatch.delenv("GITLAB_TOKEN", raising=False)
         monkeypatch.setattr(
-            os.path, "expanduser", lambda x: str(tmp_path / "nonexistent")
+            glab_harness,
+            "GITLAB_TOKEN_SECRET_FILE_PATH",
+            tmp_path / "does-not-exist",
         )
         with pytest.raises(SystemExit):
             glab_harness.resolve_gitlab_token()
 
-    @patch("subprocess.run")
-    def test_sources_token_from_secrets_file(self, mock_run, monkeypatch, tmp_path):
+    def test_reads_token_from_secret_file(self, monkeypatch, tmp_path):
         monkeypatch.delenv("GITLAB_TOKEN", raising=False)
-        secrets_file = tmp_path / "source-secrets.sh"
-        secrets_file.touch()
-        monkeypatch.setattr(os.path, "expanduser", lambda x: str(secrets_file))
-        mock_run.return_value = MagicMock(returncode=0, stdout="sourced-token\n")
-        assert glab_harness.resolve_gitlab_token() == "sourced-token"
+        secret_file = tmp_path / "glab-token"
+        secret_file.write_text("token-from-disk\n")
+        monkeypatch.setattr(glab_harness, "GITLAB_TOKEN_SECRET_FILE_PATH", secret_file)
+        assert glab_harness.resolve_gitlab_token() == "token-from-disk"
 
 
 class TestResolveProjectPathFromGitRemote:

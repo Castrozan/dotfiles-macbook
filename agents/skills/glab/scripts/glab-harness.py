@@ -6,32 +6,30 @@ import subprocess
 import sys
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 
 GITLAB_HOST = "git.coates.io"
 GITLAB_API_BASE = f"https://{GITLAB_HOST}/api/v4"
 
+GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME = "GITLAB_TOKEN"
+GITLAB_TOKEN_SECRET_FILE_PATH = Path.home() / ".secrets" / "glab-token"
+
 
 def resolve_gitlab_token():
-    token = os.environ.get("GITLAB_TOKEN")
+    token = os.environ.get(GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME)
     if token:
         return token
 
-    secrets_path = os.path.expanduser("~/.secrets/source-secrets.sh")
-    if os.path.exists(secrets_path):
-        result = subprocess.run(
-            f"source {secrets_path} && echo $GITLAB_TOKEN",
-            capture_output=True,
-            text=True,
-            shell=True,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            token = result.stdout.strip()
-            os.environ["GITLAB_TOKEN"] = token
-            return token
+    if GITLAB_TOKEN_SECRET_FILE_PATH.is_file():
+        token = GITLAB_TOKEN_SECRET_FILE_PATH.read_text().strip()
+        os.environ[GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME] = token
+        return token
 
     print(
-        "Error: GITLAB_TOKEN not set. Source ~/.secrets/source-secrets.sh",
+        f"Error: {GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME} not set and "
+        f"{GITLAB_TOKEN_SECRET_FILE_PATH} not found. "
+        "Run rebuild to deploy agenix secrets.",
         file=sys.stderr,
     )
     sys.exit(1)
