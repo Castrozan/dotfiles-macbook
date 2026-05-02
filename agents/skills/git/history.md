@@ -27,7 +27,7 @@ Search broad first, then narrow. Use multiple keyword variants in one grep - the
 grep -i "browser\|chrome\|cdp\|playwright\|devtools" /tmp/gitlog-*.txt
 ```
 
-When searching layer 1, file paths are the highest-signal data - they don't suffer from terse commit messages. A commit touching `home/modules/openclaw/browser-use/` is about browser automation regardless of what the subject line says.
+When searching layer 1, file paths are the highest-signal data - they don't suffer from terse commit messages. A commit touching `home/modules/desktop/browser-control/` is about browser automation regardless of what the subject line says.
 
 When searching layer 2 (patches), look for function names, variable names, config keys, error messages - things that appear in code but never in commit messages.
 </search_technique>
