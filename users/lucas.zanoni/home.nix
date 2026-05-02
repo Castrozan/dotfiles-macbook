@@ -52,6 +52,8 @@
 
     ../../home/modules/security/agenix.nix
 
+    ../../home/modules/network/tailscale-daemon.nix
+
     ../../home/modules/media/obsidian
 
     "${inputs.private-config}/sb-toolkit"
