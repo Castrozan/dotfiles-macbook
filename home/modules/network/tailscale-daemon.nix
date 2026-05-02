@@ -31,11 +31,16 @@ let
       exit 1
     fi
 
-    echo "[tailscale] CLI not found, installing via Homebrew..."
-    "$BREW" install tailscale
+    if "$BREW" list --formula tailscale >/dev/null 2>&1; then
+      echo "[tailscale] formula installed but symlink missing, relinking..."
+      "$BREW" link --overwrite tailscale
+    else
+      echo "[tailscale] CLI not found, installing via Homebrew..."
+      "$BREW" install tailscale
+    fi
 
     echo ""
-    echo "[tailscale] Install complete. To start the daemon and join the tailnet:"
+    echo "[tailscale] To start the daemon and join the tailnet:"
     echo "[tailscale]   sudo brew services start tailscale"
     echo "[tailscale]   sudo tailscale up"
     echo ""
