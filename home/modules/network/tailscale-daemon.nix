@@ -5,10 +5,17 @@ let
     "/usr/local/bin/brew"
   ];
 
+  tailscaleCandidatePaths = [
+    "/opt/homebrew/bin/tailscale"
+    "/usr/local/bin/tailscale"
+  ];
+
   installScript = ''
-    if command -v tailscale >/dev/null 2>&1; then
-      exit 0
-    fi
+    for candidate in ${lib.concatStringsSep " " tailscaleCandidatePaths}; do
+      if [ -x "$candidate" ]; then
+        exit 0
+      fi
+    done
 
     BREW=""
     for candidate in ${lib.concatStringsSep " " brewCandidatePaths}; do
