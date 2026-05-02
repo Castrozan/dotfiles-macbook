@@ -11,6 +11,27 @@ let
 
   dellg15HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICC9JN3f6UmPSmDUSfoSH+0tzQc66LEWLn9A+/b4xJCg";
 
+  inboundAuthorizedKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDXjYtc1kccaHnEeCnLfn5jB+3K8ULqIIsFoq+4pc+fX zanoni@dellg15"
+  ];
+
+  authorizedKeysScript = pkgs.writeShellScript "ensure-inbound-authorized-keys" ''
+    set -euo pipefail
+    SSH_DIR="$HOME/.ssh"
+    AUTHORIZED="$SSH_DIR/authorized_keys"
+
+    mkdir -p "$SSH_DIR"
+    chmod 700 "$SSH_DIR"
+    touch "$AUTHORIZED"
+    chmod 600 "$AUTHORIZED"
+
+    ${lib.concatMapStringsSep "\n" (key: ''
+      if ! grep -qxF ${lib.escapeShellArg key} "$AUTHORIZED"; then
+        printf '%s\n' ${lib.escapeShellArg key} >> "$AUTHORIZED"
+      fi
+    '') inboundAuthorizedKeys}
+  '';
+
   generateScript = pkgs.writeShellScript "generate-private-ssh-config" ''
     set -euo pipefail
     HOSTS="${sshHostsDecryptedPath}"
@@ -80,4 +101,8 @@ in
       run ${generateScript}
     ''
   );
+
+  home.activation.ensureInboundAuthorizedKeys = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${authorizedKeysScript}
+  '';
 }
