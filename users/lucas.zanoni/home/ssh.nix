@@ -9,10 +9,10 @@ let
 
   sshHostsDecryptedPath = "${config.home.homeDirectory}/.secrets/ssh-hosts";
 
-  dellg15HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICC9JN3f6UmPSmDUSfoSH+0tzQc66LEWLn9A+/b4xJCg";
+  nixosHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICC9JN3f6UmPSmDUSfoSH+0tzQc66LEWLn9A+/b4xJCg";
 
   inboundAuthorizedKeys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDXjYtc1kccaHnEeCnLfn5jB+3K8ULqIIsFoq+4pc+fX zanoni@dellg15"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDXjYtc1kccaHnEeCnLfn5jB+3K8ULqIIsFoq+4pc+fX zanoni@nixos"
   ];
 
   authorizedKeysScript = pkgs.writeShellScript "ensure-inbound-authorized-keys" ''
@@ -53,17 +53,17 @@ let
     done < "$HOSTS"
 
     {
-      if [ -n "''${hosts[dellg15]:-}" ]; then
-        printf 'Host dellg15\n'
-        printf '    HostName %s\n' "''${hosts[dellg15]}"
+      if [ -n "''${hosts[nixos]:-}" ]; then
+        printf 'Host nixos\n'
+        printf '    HostName %s\n' "''${hosts[nixos]}"
         printf '    User zanoni\n'
-        printf '    IdentityFile ~/.ssh/id_ed25519_dellg15\n\n'
+        printf '    IdentityFile ~/.ssh/id_ed25519_nixos\n\n'
       fi
     } > "$PRIVATE_HOSTS"
 
     {
-      if [ -n "''${hosts[dellg15]:-}" ]; then
-        printf '%s ${dellg15HostKey}\n' "''${hosts[dellg15]}"
+      if [ -n "''${hosts[nixos]:-}" ]; then
+        printf '%s ${nixosHostKey}\n' "''${hosts[nixos]}"
       fi
     } > "$KNOWN_HOSTS_PRIVATE"
 
