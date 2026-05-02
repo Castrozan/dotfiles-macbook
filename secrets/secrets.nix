@@ -11,4 +11,5 @@ in
   "credentials/obsidian-headless-sync-config.age".publicKeys = all_keys;
   "credentials/glab-token.age".publicKeys = all_keys;
   "credentials/jira-api-token.age".publicKeys = all_keys;
+  "infrastructure/ssh-hosts.age".publicKeys = all_keys;
 }

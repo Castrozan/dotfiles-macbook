@@ -18,6 +18,7 @@ let
   secretsWithoutEnvironmentVariables = [
     "credentials/obsidian-headless-auth-token"
     "credentials/obsidian-headless-sync-config"
+    "infrastructure/ssh-hosts"
   ];
 
   secretsAsEnvironmentVariables = {

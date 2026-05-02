@@ -1,38 +1,40 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   sshHostsSecretExists = builtins.pathExists ../../../secrets/infrastructure/ssh-hosts.age;
 
+  sshHostsDecryptedPath = "${config.home.homeDirectory}/.secrets/ssh-hosts";
+
   generateScript = pkgs.writeShellScript "generate-private-ssh-config" ''
-        set -euo pipefail
-        HOSTS="/run/agenix/ssh-hosts"
-        CONFIG_DIR="$HOME/.ssh/config.d"
-        PRIVATE_HOSTS="$CONFIG_DIR/private-hosts"
+    set -euo pipefail
+    HOSTS="${sshHostsDecryptedPath}"
+    CONFIG_DIR="$HOME/.ssh/config.d"
+    PRIVATE_HOSTS="$CONFIG_DIR/private-hosts"
 
-        mkdir -p "$CONFIG_DIR"
+    mkdir -p "$CONFIG_DIR"
 
-        if [ ! -f "$HOSTS" ]; then
-          rm -f "$PRIVATE_HOSTS"
-          exit 0
-        fi
+    if [ ! -f "$HOSTS" ]; then
+      rm -f "$PRIVATE_HOSTS"
+      exit 0
+    fi
 
-        declare -A hosts
-        while IFS='=' read -r key value; do
-          [ -n "$key" ] && hosts["$key"]="$value"
-        done < "$HOSTS"
+    declare -A hosts
+    while IFS='=' read -r key value; do
+      [ -n "$key" ] && hosts["$key"]="$value"
+    done < "$HOSTS"
 
-        {
-          if [ -n "''${hosts[dellg15]:-}" ]; then
-            printf 'Host dellg15
-    '
-            printf '    HostName %s
-    ' "''${hosts[dellg15]}"
-            printf '    User zanoni
-    '
-            printf '    IdentityFile ~/.ssh/id_ed25519
-
-    '
-          fi
-        } > "$PRIVATE_HOSTS"
+    {
+      if [ -n "''${hosts[dellg15]:-}" ]; then
+        printf 'Host dellg15\n'
+        printf '    HostName %s\n' "''${hosts[dellg15]}"
+        printf '    User zanoni\n'
+        printf '    IdentityFile ~/.ssh/id_ed25519\n\n'
+      fi
+    } > "$PRIVATE_HOSTS"
   '';
 in
 {
@@ -58,7 +60,7 @@ in
   };
 
   home.activation.generatePrivateSshConfig = lib.mkIf sshHostsSecretExists (
-    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    lib.hm.dag.entryAfter [ "agenix" ] ''
       run ${generateScript}
     ''
   );
