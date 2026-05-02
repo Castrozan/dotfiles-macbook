@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-04-18T16:49:30.228494+00:00",
-  "git_commit": "d4f5c64",
+  "generated_at": "2026-05-02T15:06:30.579309+00:00",
+  "git_commit": "04bc32b",
   "total_tests": 112,
-  "total_passed": 96,
-  "total_failed": 16,
-  "pass_rate": 0.8571,
+  "total_passed": 93,
+  "total_failed": 19,
+  "pass_rate": 0.8304,
   "categories": {
     "other": {
-      "passed": 31,
-      "failed": 1,
+      "passed": 32,
+      "failed": 0,
       "tests": [
         {
           "name": "worktrees_knows_builtin_flag",
@@ -100,7 +100,7 @@
         },
         {
           "name": "review_ignores_preexisting_unchanged_lines",
-          "passed": false
+          "passed": true
         },
         {
           "name": "review_flags_hardcoded_credentials",
@@ -141,8 +141,8 @@
       ]
     },
     "compliance": {
-      "passed": 23,
-      "failed": 1,
+      "passed": 22,
+      "failed": 2,
       "tests": [
         {
           "name": "delegation_multi_agent_implementation_prefers_teams",
@@ -222,7 +222,7 @@
         },
         {
           "name": "workflow_fix_before_responding",
-          "passed": true
+          "passed": false
         },
         {
           "name": "rebuild_stages_nix_files_first",
@@ -243,8 +243,8 @@
       ]
     },
     "routing": {
-      "passed": 26,
-      "failed": 14,
+      "passed": 23,
+      "failed": 17,
       "tests": [
         {
           "name": "routing_to_desktop_keyboard_typing",
@@ -284,7 +284,7 @@
         },
         {
           "name": "routing_to_twitter_scrape",
-          "passed": true
+          "passed": false
         },
         {
           "name": "routing_to_session_deep_work",
@@ -292,7 +292,7 @@
         },
         {
           "name": "routing_to_session_worktree",
-          "passed": true
+          "passed": false
         },
         {
           "name": "routing_to_session_tmux_control",
@@ -300,7 +300,7 @@
         },
         {
           "name": "routing_to_session_restart",
-          "passed": true
+          "passed": false
         },
         {
           "name": "routing_to_browser_web_scraping",
@@ -316,11 +316,11 @@
         },
         {
           "name": "routing_to_commit_staging",
-          "passed": false
+          "passed": true
         },
         {
           "name": "routing_to_glab_merge_request",
-          "passed": false
+          "passed": true
         },
         {
           "name": "routing_to_glab_pipeline_status",
@@ -332,7 +332,7 @@
         },
         {
           "name": "routing_to_jira_sprint_status",
-          "passed": true
+          "passed": false
         },
         {
           "name": "routing_to_obsidian_daily_note",
@@ -340,7 +340,7 @@
         },
         {
           "name": "routing_to_obsidian_todo_tracking",
-          "passed": true
+          "passed": false
         },
         {
           "name": "routing_to_dotfiles_module_addition",
@@ -376,11 +376,11 @@
         },
         {
           "name": "routing_to_tldr_compress_output",
-          "passed": false
+          "passed": true
         },
         {
           "name": "routing_to_devenv_shell_setup",
-          "passed": true
+          "passed": false
         },
         {
           "name": "routing_ambiguous_nix_dotfiles_vs_nix_expert",
@@ -388,15 +388,15 @@
         },
         {
           "name": "routing_ambiguous_browser_vs_desktop_screenshot",
-          "passed": false
-        },
-        {
-          "name": "routing_ambiguous_research_vs_browser",
           "passed": true
         },
         {
-          "name": "routing_ambiguous_claude_vs_session_parallel_work",
+          "name": "routing_ambiguous_research_vs_browser",
           "passed": false
+        },
+        {
+          "name": "routing_ambiguous_claude_vs_session_parallel_work",
+          "passed": true
         },
         {
           "name": "routing_ambiguous_commit_vs_session_worktree",
@@ -404,7 +404,7 @@
         },
         {
           "name": "routing_ambiguous_dotfiles_vs_rebuild",
-          "passed": true
+          "passed": false
         }
       ]
     },
