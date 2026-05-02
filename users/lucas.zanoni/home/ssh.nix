@@ -9,16 +9,20 @@ let
 
   sshHostsDecryptedPath = "${config.home.homeDirectory}/.secrets/ssh-hosts";
 
+  dellg15HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDXjYtc1kccaHnEeCnLfn5jB+3K8ULqIIsFoq+4pc+fX";
+
   generateScript = pkgs.writeShellScript "generate-private-ssh-config" ''
     set -euo pipefail
     HOSTS="${sshHostsDecryptedPath}"
-    CONFIG_DIR="$HOME/.ssh/config.d"
+    SSH_DIR="$HOME/.ssh"
+    CONFIG_DIR="$SSH_DIR/config.d"
     PRIVATE_HOSTS="$CONFIG_DIR/private-hosts"
+    KNOWN_HOSTS_PRIVATE="$SSH_DIR/known_hosts_private"
 
     mkdir -p "$CONFIG_DIR"
 
     if [ ! -f "$HOSTS" ]; then
-      rm -f "$PRIVATE_HOSTS"
+      rm -f "$PRIVATE_HOSTS" "$KNOWN_HOSTS_PRIVATE"
       exit 0
     fi
 
@@ -32,9 +36,21 @@ let
         printf 'Host dellg15\n'
         printf '    HostName %s\n' "''${hosts[dellg15]}"
         printf '    User zanoni\n'
-        printf '    IdentityFile ~/.ssh/id_ed25519\n\n'
+        printf '    IdentityFile ~/.ssh/id_ed25519_dellg15\n\n'
       fi
     } > "$PRIVATE_HOSTS"
+
+    {
+      if [ -n "''${hosts[dellg15]:-}" ]; then
+        printf '%s ${dellg15HostKey}\n' "''${hosts[dellg15]}"
+      fi
+    } > "$KNOWN_HOSTS_PRIVATE"
+
+    if [ -s "$KNOWN_HOSTS_PRIVATE" ]; then
+      touch "$SSH_DIR/known_hosts"
+      cat "$KNOWN_HOSTS_PRIVATE" >> "$SSH_DIR/known_hosts"
+      sort -u "$SSH_DIR/known_hosts" -o "$SSH_DIR/known_hosts"
+    fi
   '';
 in
 {
