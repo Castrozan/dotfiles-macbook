@@ -9,7 +9,7 @@ let
 
   sshHostsDecryptedPath = "${config.home.homeDirectory}/.secrets/ssh-hosts";
 
-  dellg15HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDXjYtc1kccaHnEeCnLfn5jB+3K8ULqIIsFoq+4pc+fX";
+  dellg15HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICC9JN3f6UmPSmDUSfoSH+0tzQc66LEWLn9A+/b4xJCg";
 
   generateScript = pkgs.writeShellScript "generate-private-ssh-config" ''
     set -euo pipefail
