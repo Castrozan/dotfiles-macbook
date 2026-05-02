@@ -67,7 +67,6 @@ in
       key-mapping.preset = "qwerty";
 
       on-focus-changed = [
-        "fullscreen on"
         ''exec-and-forget ${userBinPath}/workspace-switcher-send "focus:$AEROSPACE_WINDOW_ID"''
       ];
       on-focused-monitor-changed = [ "move-mouse monitor-lazy-center" ];

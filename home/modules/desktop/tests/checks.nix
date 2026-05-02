@@ -148,11 +148,6 @@ in
       ) karabinerRules)
       "karabiner must intercept cmd-w and kill focused window application via close-focused-window script";
 
-  domain-desktop-aerospace-on-focus-changed-forces-fullscreen =
-    mkEvalCheck "domain-desktop-aerospace-on-focus-changed-forces-fullscreen"
-      (builtins.elem "fullscreen on" aerospaceSettings.on-focus-changed)
-      "on-focus-changed must run 'fullscreen on' so every focused window (including newly created ones) is forced fullscreen (on-window-detected does not accept the fullscreen command)";
-
   domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces =
     let
       expectedStartupCommands =
