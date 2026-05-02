@@ -45,15 +45,15 @@
             }
             {
               InputSourceKind = "Keyboard Layout";
-              "KeyboardLayout ID" = 12289;
-              "KeyboardLayout Name" = "Brazilian-ABNT2";
+              "KeyboardLayout ID" = -22000;
+              "KeyboardLayout Name" = "Brazilian ABNT2 Fixed";
             }
           ];
           AppleSelectedInputSources = [
             {
               InputSourceKind = "Keyboard Layout";
-              "KeyboardLayout ID" = 12289;
-              "KeyboardLayout Name" = "Brazilian-ABNT2";
+              "KeyboardLayout ID" = -22000;
+              "KeyboardLayout Name" = "Brazilian ABNT2 Fixed";
             }
           ];
         };

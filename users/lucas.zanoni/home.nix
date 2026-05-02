@@ -33,6 +33,7 @@
     ../../home/modules/desktop/close-focused-window.nix
     ../../home/modules/desktop/fonts.nix
     ../../home/modules/desktop/karabiner.nix
+    ../../home/modules/desktop/keyboard-layout
     ../../home/modules/desktop/maccy.nix
     ../../home/modules/desktop/spaceman.nix
     ../../home/modules/desktop/summon-brave.nix
