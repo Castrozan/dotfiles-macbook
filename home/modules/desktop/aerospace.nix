@@ -24,6 +24,7 @@ let
   workspaceAccordionStartupCommands =
     lib.concatMap (n: [
       "workspace ${toString n}"
+      "flatten-workspace-tree"
       "layout accordion"
     ]) workspaceNumbers
     ++ [ "workspace 1" ];

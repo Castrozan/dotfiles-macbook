@@ -153,13 +153,14 @@ in
       expectedStartupCommands =
         lib.concatMap (n: [
           "workspace ${toString n}"
+          "flatten-workspace-tree"
           "layout accordion"
         ]) (lib.range 1 7)
         ++ [ "workspace 1" ];
     in
     mkEvalCheck "domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces"
       (aerospaceSettings.after-startup-command == expectedStartupCommands)
-      "after-startup-command should set accordion layout on every workspace 1-7 and return to workspace 1";
+      "after-startup-command should flatten and set accordion layout on every workspace 1-7 and return to workspace 1 so accordion is the durable default even when windows arrive in nested tile sub-containers";
 
   domain-desktop-aerospace-no-cmd-letter-bindings =
     mkEvalCheck "domain-desktop-aerospace-no-cmd-letter-bindings" (!aerospaceBindsCmdLetter)
