@@ -133,20 +133,18 @@ in
     mkEvalCheck "domain-desktop-aerospace-cmd-w-not-bound" (!(aerospaceBindings ? cmd-w))
       "cmd-w must not be bound in aerospace (karabiner intercepts it to close window via aerospace CLI)";
 
-  domain-desktop-karabiner-cmd-w-kills-focused-window-application =
-    mkEvalCheck "domain-desktop-karabiner-cmd-w-kills-focused-window-application"
+  domain-desktop-karabiner-cmd-w-closes-window-via-aerospace =
+    mkEvalCheck "domain-desktop-karabiner-cmd-w-closes-window-via-aerospace"
       (lib.any (
         rule:
         lib.any (
           manipulator:
           (manipulator.from.key_code or "") == "w"
           && builtins.elem "command" (manipulator.from.modifiers.mandatory or [ ])
-          && lib.any (to: lib.hasInfix "close-focused-window" (to.shell_command or "")) (
-            manipulator.to or [ ]
-          )
+          && lib.any (to: lib.hasInfix "aerospace close" (to.shell_command or "")) (manipulator.to or [ ])
         ) (rule.manipulators or [ ])
       ) karabinerRules)
-      "karabiner must intercept cmd-w and kill focused window application via close-focused-window script";
+      "karabiner must intercept cmd-w and close focused window via aerospace close";
 
   domain-desktop-aerospace-startup-enforces-accordion-on-all-workspaces =
     let

@@ -30,7 +30,6 @@
     ../../home/modules/desktop/application-launcher
     ../../home/modules/desktop/workspace-navigator.nix
     ../../home/modules/desktop/workspace-switcher-client.nix
-    ../../home/modules/desktop/close-focused-window.nix
     ../../home/modules/desktop/fonts.nix
     ../../home/modules/desktop/karabiner.nix
     ../../home/modules/desktop/keyboard-layout
