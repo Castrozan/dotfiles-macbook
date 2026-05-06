@@ -12,6 +12,7 @@
     ./symbolic-hotkeys.nix
     ./quit-windowless-applications.nix
     ./workspace-window-switcher.nix
+    ./karabiner-restart-on-wake.nix
     ./scripts/rebuild.nix
   ];
   users.users.${username} = {
