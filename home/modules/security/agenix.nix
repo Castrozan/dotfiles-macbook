@@ -23,6 +23,7 @@ let
 
   secretsAsEnvironmentVariables = {
     "credentials/glab-token" = "GITLAB_TOKEN";
+    "credentials/gitlab-com-token" = "GITLAB_COM_TOKEN";
     "credentials/jira-api-token" = "JIRA_API_TOKEN";
   };
 
