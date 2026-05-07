@@ -9,33 +9,21 @@ import urllib.request
 from pathlib import Path
 
 
-GITLAB_HOST = "git.coates.io"
-GITLAB_API_BASE = f"https://{GITLAB_HOST}/api/v4"
+GITLAB_HOST_COATES = "git.coates.io"
+GITLAB_HOST_PUBLIC = "gitlab.com"
 
-GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME = "GITLAB_TOKEN"
-GITLAB_TOKEN_SECRET_FILE_PATH = Path.home() / ".secrets" / "glab-token"
+GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME_BY_HOST = {
+    GITLAB_HOST_COATES: "GITLAB_TOKEN",
+    GITLAB_HOST_PUBLIC: "GITLAB_COM_TOKEN",
+}
 
-
-def resolve_gitlab_token():
-    token = os.environ.get(GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME)
-    if token:
-        return token
-
-    if GITLAB_TOKEN_SECRET_FILE_PATH.is_file():
-        token = GITLAB_TOKEN_SECRET_FILE_PATH.read_text().strip()
-        os.environ[GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME] = token
-        return token
-
-    print(
-        f"Error: {GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME} not set and "
-        f"{GITLAB_TOKEN_SECRET_FILE_PATH} not found. "
-        "Run rebuild to deploy agenix secrets.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
+GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST = {
+    GITLAB_HOST_COATES: Path.home() / ".secrets" / "glab-token",
+    GITLAB_HOST_PUBLIC: Path.home() / ".secrets" / "gitlab-com-token",
+}
 
 
-def resolve_project_path_from_git_remote():
+def resolve_git_remote_url():
     result = subprocess.run(
         ["git", "remote", "get-url", "origin"],
         capture_output=True,
@@ -44,9 +32,30 @@ def resolve_project_path_from_git_remote():
     if result.returncode != 0:
         print("Error: not a git repository or no origin remote", file=sys.stderr)
         sys.exit(1)
+    return result.stdout.strip()
 
-    remote_url = result.stdout.strip()
 
+def resolve_gitlab_host_from_remote_url(remote_url):
+    if remote_url.startswith("git@"):
+        host = remote_url.split("@", 1)[1].split(":", 1)[0]
+    elif remote_url.startswith("https://") or remote_url.startswith("http://"):
+        host = remote_url.split("/")[2]
+    else:
+        print(f"Error: unrecognized remote URL format: {remote_url}", file=sys.stderr)
+        sys.exit(1)
+
+    if host not in GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST:
+        print(
+            f"Error: unsupported GitLab host '{host}'. "
+            f"Known hosts: {sorted(GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST.keys())}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    return host
+
+
+def resolve_project_path_from_remote_url(remote_url):
     if remote_url.startswith("git@"):
         path = remote_url.split(":", 1)[1]
     elif remote_url.startswith("https://") or remote_url.startswith("http://"):
@@ -61,8 +70,34 @@ def resolve_project_path_from_git_remote():
     return path
 
 
-def gitlab_api_request(method, endpoint, token, body=None):
-    url = f"{GITLAB_API_BASE}/{endpoint}"
+def resolve_gitlab_token(host):
+    environment_variable_name = GITLAB_TOKEN_ENVIRONMENT_VARIABLE_NAME_BY_HOST[host]
+    secret_file_path = GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST[host]
+
+    token = os.environ.get(environment_variable_name)
+    if token:
+        return token
+
+    if secret_file_path.is_file():
+        token = secret_file_path.read_text().strip()
+        os.environ[environment_variable_name] = token
+        return token
+
+    print(
+        f"Error: {environment_variable_name} not set and "
+        f"{secret_file_path} not found. "
+        "Run rebuild to deploy agenix secrets.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def gitlab_api_base_for_host(host):
+    return f"https://{host}/api/v4"
+
+
+def gitlab_api_request(method, endpoint, token, body=None, host=GITLAB_HOST_COATES):
+    url = f"{gitlab_api_base_for_host(host)}/{endpoint}"
     headers = {"PRIVATE-TOKEN": token}
 
     data = None
@@ -88,28 +123,33 @@ def encoded_project_path(project_path):
     return urllib.parse.quote(project_path, safe="")
 
 
-def resolve_username_to_id(username, token):
+def resolve_username_to_id(username, token, host):
     encoded_username = urllib.parse.quote(username.strip())
-    users = gitlab_api_request("GET", f"users?username={encoded_username}", token)
+    users = gitlab_api_request(
+        "GET", f"users?username={encoded_username}", token, host=host
+    )
     if users:
         return users[0]["id"]
     print(f"Warning: user '{username}' not found", file=sys.stderr)
     return None
 
 
-def resolve_comma_separated_usernames_to_ids(usernames_string, token):
+def resolve_comma_separated_usernames_to_ids(usernames_string, token, host):
     user_ids = []
     for username in usernames_string.split(","):
-        user_id = resolve_username_to_id(username, token)
+        user_id = resolve_username_to_id(username, token, host)
         if user_id:
             user_ids.append(user_id)
     return user_ids
 
 
-def command_merge_request_view(args, token, project):
+def command_merge_request_view(args, token, project, host):
     project_encoded = encoded_project_path(project)
     merge_request = gitlab_api_request(
-        "GET", f"projects/{project_encoded}/merge_requests/{args.iid}", token
+        "GET",
+        f"projects/{project_encoded}/merge_requests/{args.iid}",
+        token,
+        host=host,
     )
 
     print(f"!{merge_request['iid']} | {merge_request['title']}")
@@ -139,7 +179,7 @@ def command_merge_request_view(args, token, project):
         print(f"\n{merge_request['description']}")
 
 
-def command_merge_request_create(args, token, project):
+def command_merge_request_create(args, token, project, host):
     project_encoded = encoded_project_path(project)
 
     body = {
@@ -157,22 +197,26 @@ def command_merge_request_create(args, token, project):
 
     if args.assignee:
         body["assignee_ids"] = resolve_comma_separated_usernames_to_ids(
-            args.assignee, token
+            args.assignee, token, host
         )
 
     if args.reviewer:
         body["reviewer_ids"] = resolve_comma_separated_usernames_to_ids(
-            args.reviewer, token
+            args.reviewer, token, host
         )
 
     merge_request = gitlab_api_request(
-        "POST", f"projects/{project_encoded}/merge_requests", token, body=body
+        "POST",
+        f"projects/{project_encoded}/merge_requests",
+        token,
+        body=body,
+        host=host,
     )
     print(f"!{merge_request['iid']} | {merge_request['title']}")
     print(merge_request["web_url"])
 
 
-def command_merge_request_update(args, token, project):
+def command_merge_request_update(args, token, project, host):
     project_encoded = encoded_project_path(project)
 
     body = {}
@@ -183,11 +227,11 @@ def command_merge_request_update(args, token, project):
             body["description"] = description_file.read()
     if args.assignee:
         body["assignee_ids"] = resolve_comma_separated_usernames_to_ids(
-            args.assignee, token
+            args.assignee, token, host
         )
     if args.reviewer:
         body["reviewer_ids"] = resolve_comma_separated_usernames_to_ids(
-            args.reviewer, token
+            args.reviewer, token, host
         )
 
     if not body:
@@ -195,16 +239,23 @@ def command_merge_request_update(args, token, project):
         sys.exit(1)
 
     merge_request = gitlab_api_request(
-        "PUT", f"projects/{project_encoded}/merge_requests/{args.iid}", token, body=body
+        "PUT",
+        f"projects/{project_encoded}/merge_requests/{args.iid}",
+        token,
+        body=body,
+        host=host,
     )
     print(f"!{merge_request['iid']} | {merge_request['title']}")
     print(merge_request["web_url"])
 
 
-def command_merge_request_changes(args, token, project):
+def command_merge_request_changes(args, token, project, host):
     project_encoded = encoded_project_path(project)
     data = gitlab_api_request(
-        "GET", f"projects/{project_encoded}/merge_requests/{args.iid}/changes", token
+        "GET",
+        f"projects/{project_encoded}/merge_requests/{args.iid}/changes",
+        token,
+        host=host,
     )
     changes = data.get("changes", [])
     print(f"{len(changes)} files changed:")
@@ -212,12 +263,13 @@ def command_merge_request_changes(args, token, project):
         print(f"  {change['new_path']}")
 
 
-def command_merge_request_discussions(args, token, project):
+def command_merge_request_discussions(args, token, project, host):
     project_encoded = encoded_project_path(project)
     discussions = gitlab_api_request(
         "GET",
         f"projects/{project_encoded}/merge_requests/{args.iid}/discussions?per_page=100",
         token,
+        host=host,
     )
 
     found_comments = False
@@ -245,18 +297,19 @@ def command_merge_request_discussions(args, token, project):
         print("No comments on this merge request.")
 
 
-def command_merge_request_close(args, token, project):
+def command_merge_request_close(args, token, project, host):
     project_encoded = encoded_project_path(project)
     merge_request = gitlab_api_request(
         "PUT",
         f"projects/{project_encoded}/merge_requests/{args.iid}",
         token,
         body={"state_event": "close"},
+        host=host,
     )
     print(f"!{merge_request['iid']} closed")
 
 
-def command_merge_request_merge(args, token, project):
+def command_merge_request_merge(args, token, project, host):
     project_encoded = encoded_project_path(project)
     body = {}
     if args.squash:
@@ -266,41 +319,44 @@ def command_merge_request_merge(args, token, project):
         f"projects/{project_encoded}/merge_requests/{args.iid}/merge",
         token,
         body=body,
+        host=host,
     )
     print(f"!{merge_request['iid']} merged")
 
 
-def command_pipelines(args, token, project):
+def command_pipelines(args, token, project, host):
     project_encoded = encoded_project_path(project)
     endpoint = f"projects/{project_encoded}/pipelines?per_page={args.count}"
     if args.ref:
         endpoint += f"&ref={urllib.parse.quote(args.ref)}"
-    pipelines = gitlab_api_request("GET", endpoint, token)
+    pipelines = gitlab_api_request("GET", endpoint, token, host=host)
     for pipeline in pipelines:
         print(
             f"#{pipeline['id']} | {pipeline['status']:10s} | {pipeline['source']:20s} | {pipeline['created_at']}"
         )
 
 
-def command_pipeline_jobs(args, token, project):
+def command_pipeline_jobs(args, token, project, host):
     project_encoded = encoded_project_path(project)
     jobs = gitlab_api_request(
         "GET",
         f"projects/{project_encoded}/pipelines/{args.pipeline_id}/jobs?per_page=50",
         token,
+        host=host,
     )
     for job in jobs:
         finished = job.get("finished_at", "")
         print(f"  {job['name']:30s} {job['status']:12s} {job['stage']:15s} {finished}")
 
 
-def command_delete_branch(args, token, project):
+def command_delete_branch(args, token, project, host):
     project_encoded = encoded_project_path(project)
     encoded_branch = urllib.parse.quote(args.branch_name, safe="")
     gitlab_api_request(
         "DELETE",
         f"projects/{project_encoded}/repository/branches/{encoded_branch}",
         token,
+        host=host,
     )
     print(f"Branch '{args.branch_name}' deleted")
 
@@ -354,8 +410,10 @@ def main():
     delete_branch_parser.add_argument("branch_name")
 
     args = parser.parse_args()
-    token = resolve_gitlab_token()
-    project = resolve_project_path_from_git_remote()
+    remote_url = resolve_git_remote_url()
+    host = resolve_gitlab_host_from_remote_url(remote_url)
+    project = resolve_project_path_from_remote_url(remote_url)
+    token = resolve_gitlab_token(host)
 
     commands = {
         "mr-view": command_merge_request_view,
@@ -370,7 +428,7 @@ def main():
         "delete-branch": command_delete_branch,
     }
 
-    commands[args.command](args, token, project)
+    commands[args.command](args, token, project, host)
 
 
 if __name__ == "__main__":

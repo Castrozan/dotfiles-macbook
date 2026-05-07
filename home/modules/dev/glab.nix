@@ -17,6 +17,12 @@ let
         api_protocol = "https";
         user = "Lucas.Zanoni";
       };
+      "gitlab.com" = {
+        api_host = "gitlab.com";
+        git_protocol = "ssh";
+        api_protocol = "https";
+        user = "lucas.zanoni-coates";
+      };
     };
   };
 

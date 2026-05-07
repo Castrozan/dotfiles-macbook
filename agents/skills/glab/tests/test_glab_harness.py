@@ -17,6 +17,7 @@ glab_harness = importlib.import_module("glab-harness")
 @pytest.fixture(autouse=True)
 def set_gitlab_token_environment_variable(monkeypatch):
     monkeypatch.setenv("GITLAB_TOKEN", "fake-token-for-testing")
+    monkeypatch.setenv("GITLAB_COM_TOKEN", "fake-com-token-for-testing")
 
 
 @pytest.fixture(autouse=True)
@@ -47,59 +48,114 @@ def make_mock_http_response(response_data):
     return mock_response
 
 
+class TestResolveGitlabHostFromRemoteUrl:
+    def test_returns_coates_host_for_ssh_remote(self):
+        assert (
+            glab_harness.resolve_gitlab_host_from_remote_url(
+                "git@git.coates.io:digital-production/mcdca-tools/mcdca-workspace.git"
+            )
+            == "git.coates.io"
+        )
+
+    def test_returns_gitlab_com_host_for_ssh_remote(self):
+        assert (
+            glab_harness.resolve_gitlab_host_from_remote_url(
+                "git@gitlab.com:coates/mcd-ca/shell.git"
+            )
+            == "gitlab.com"
+        )
+
+    def test_returns_host_for_https_remote(self):
+        assert (
+            glab_harness.resolve_gitlab_host_from_remote_url(
+                "https://gitlab.com/coates/mcd-ca/tools/digital-promo-scaffolding.git"
+            )
+            == "gitlab.com"
+        )
+
+    def test_exits_for_unsupported_host(self):
+        with pytest.raises(SystemExit):
+            glab_harness.resolve_gitlab_host_from_remote_url(
+                "git@github.com:foo/bar.git"
+            )
+
+
 class TestResolveGitlabToken:
-    def test_returns_token_from_environment(self, monkeypatch):
-        monkeypatch.setenv("GITLAB_TOKEN", "env-token")
-        assert glab_harness.resolve_gitlab_token() == "env-token"
+    def test_returns_coates_token_from_environment(self, monkeypatch):
+        monkeypatch.setenv("GITLAB_TOKEN", "env-coates-token")
+        assert glab_harness.resolve_gitlab_token("git.coates.io") == "env-coates-token"
+
+    def test_returns_gitlab_com_token_from_environment(self, monkeypatch):
+        monkeypatch.setenv("GITLAB_COM_TOKEN", "env-com-token")
+        assert glab_harness.resolve_gitlab_token("gitlab.com") == "env-com-token"
 
     def test_exits_when_no_token_and_no_secret_file(self, monkeypatch, tmp_path):
         monkeypatch.delenv("GITLAB_TOKEN", raising=False)
-        monkeypatch.setattr(
-            glab_harness,
-            "GITLAB_TOKEN_SECRET_FILE_PATH",
+        monkeypatch.setitem(
+            glab_harness.GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST,
+            "git.coates.io",
             tmp_path / "does-not-exist",
         )
         with pytest.raises(SystemExit):
-            glab_harness.resolve_gitlab_token()
+            glab_harness.resolve_gitlab_token("git.coates.io")
 
-    def test_reads_token_from_secret_file(self, monkeypatch, tmp_path):
+    def test_reads_coates_token_from_secret_file(self, monkeypatch, tmp_path):
         monkeypatch.delenv("GITLAB_TOKEN", raising=False)
         secret_file = tmp_path / "glab-token"
         secret_file.write_text("token-from-disk\n")
-        monkeypatch.setattr(glab_harness, "GITLAB_TOKEN_SECRET_FILE_PATH", secret_file)
-        assert glab_harness.resolve_gitlab_token() == "token-from-disk"
-
-
-class TestResolveProjectPathFromGitRemote:
-    @patch("subprocess.run")
-    def test_parses_ssh_remote_url(self, mock_run):
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="git@git.coates.io:digital-production/mcdca-tools/mcdca-workspace.git\n",
+        monkeypatch.setitem(
+            glab_harness.GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST,
+            "git.coates.io",
+            secret_file,
         )
+        assert glab_harness.resolve_gitlab_token("git.coates.io") == "token-from-disk"
+
+    def test_reads_gitlab_com_token_from_secret_file(self, monkeypatch, tmp_path):
+        monkeypatch.delenv("GITLAB_COM_TOKEN", raising=False)
+        secret_file = tmp_path / "gitlab-com-token"
+        secret_file.write_text("com-token-from-disk\n")
+        monkeypatch.setitem(
+            glab_harness.GITLAB_TOKEN_SECRET_FILE_PATH_BY_HOST,
+            "gitlab.com",
+            secret_file,
+        )
+        assert glab_harness.resolve_gitlab_token("gitlab.com") == "com-token-from-disk"
+
+
+class TestResolveProjectPathFromRemoteUrl:
+    def test_parses_ssh_coates_remote_url(self):
         assert (
-            glab_harness.resolve_project_path_from_git_remote()
+            glab_harness.resolve_project_path_from_remote_url(
+                "git@git.coates.io:digital-production/mcdca-tools/mcdca-workspace.git"
+            )
             == "digital-production/mcdca-tools/mcdca-workspace"
         )
 
-    @patch("subprocess.run")
-    def test_parses_https_remote_url(self, mock_run):
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="https://git.coates.io/digital-production/mcdca-tools/mcdca-workspace.git\n",
-        )
+    def test_parses_ssh_gitlab_com_remote_url(self):
         assert (
-            glab_harness.resolve_project_path_from_git_remote()
-            == "digital-production/mcdca-tools/mcdca-workspace"
+            glab_harness.resolve_project_path_from_remote_url(
+                "git@gitlab.com:coates/mcd-ca/tools/digital-promo-scaffolding.git"
+            )
+            == "coates/mcd-ca/tools/digital-promo-scaffolding"
         )
 
+    def test_parses_https_remote_url(self):
+        assert (
+            glab_harness.resolve_project_path_from_remote_url(
+                "https://gitlab.com/coates/mcd-ca/shell.git"
+            )
+            == "coates/mcd-ca/shell"
+        )
+
+
+class TestResolveGitRemoteUrl:
     @patch("subprocess.run")
     def test_exits_when_not_a_git_repo(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=1, stdout="", stderr="not a git repo"
         )
         with pytest.raises(SystemExit):
-            glab_harness.resolve_project_path_from_git_remote()
+            glab_harness.resolve_git_remote_url()
 
 
 class TestGitlabApiRequest:
@@ -108,7 +164,10 @@ class TestGitlabApiRequest:
         expected_response = {"id": 1, "name": "test"}
         mock_urlopen.return_value = make_mock_http_response(expected_response)
         result = glab_harness.gitlab_api_request(
-            "GET", "projects/123/merge_requests/1", "fake-token"
+            "GET",
+            "projects/123/merge_requests/1",
+            "fake-token",
+            host="git.coates.io",
         )
         assert result == expected_response
 
@@ -116,7 +175,11 @@ class TestGitlabApiRequest:
     def test_post_request_sends_json_body(self, mock_urlopen):
         mock_urlopen.return_value = make_mock_http_response({"iid": 42})
         glab_harness.gitlab_api_request(
-            "POST", "projects/123/merge_requests", "fake-token", body={"title": "Test"}
+            "POST",
+            "projects/123/merge_requests",
+            "fake-token",
+            body={"title": "Test"},
+            host="git.coates.io",
         )
         sent_request = mock_urlopen.call_args[0][0]
         assert sent_request.method == "POST"
@@ -126,9 +189,20 @@ class TestGitlabApiRequest:
     @patch("urllib.request.urlopen")
     def test_includes_private_token_header(self, mock_urlopen):
         mock_urlopen.return_value = make_mock_http_response({})
-        glab_harness.gitlab_api_request("GET", "test", "my-secret-token")
+        glab_harness.gitlab_api_request(
+            "GET", "test", "my-secret-token", host="git.coates.io"
+        )
         sent_request = mock_urlopen.call_args[0][0]
         assert sent_request.headers["Private-token"] == "my-secret-token"
+
+    @patch("urllib.request.urlopen")
+    def test_uses_host_in_url(self, mock_urlopen):
+        mock_urlopen.return_value = make_mock_http_response({})
+        glab_harness.gitlab_api_request(
+            "GET", "projects/1", "fake-token", host="gitlab.com"
+        )
+        sent_request = mock_urlopen.call_args[0][0]
+        assert sent_request.full_url.startswith("https://gitlab.com/api/v4/")
 
     @patch("urllib.request.urlopen")
     def test_exits_on_http_error(self, mock_urlopen):
@@ -140,7 +214,9 @@ class TestGitlabApiRequest:
             fp=MagicMock(read=lambda: b'{"message":"not found"}'),
         )
         with pytest.raises(SystemExit):
-            glab_harness.gitlab_api_request("GET", "bad-endpoint", "fake-token")
+            glab_harness.gitlab_api_request(
+                "GET", "bad-endpoint", "fake-token", host="git.coates.io"
+            )
 
 
 class TestResolveUsernameToId:
@@ -149,12 +225,18 @@ class TestResolveUsernameToId:
         mock_urlopen.return_value = make_mock_http_response(
             [{"id": 5, "username": "bob"}]
         )
-        assert glab_harness.resolve_username_to_id("bob", "fake-token") == 5
+        assert (
+            glab_harness.resolve_username_to_id("bob", "fake-token", "git.coates.io")
+            == 5
+        )
 
     @patch("urllib.request.urlopen")
     def test_returns_none_for_unknown_username(self, mock_urlopen, capsys):
         mock_urlopen.return_value = make_mock_http_response([])
-        assert glab_harness.resolve_username_to_id("nobody", "fake-token") is None
+        assert (
+            glab_harness.resolve_username_to_id("nobody", "fake-token", "git.coates.io")
+            is None
+        )
         assert "not found" in capsys.readouterr().err
 
 
@@ -166,7 +248,7 @@ class TestResolveCommaSeparatedUsernamesToIds:
             make_mock_http_response([{"id": 8, "username": "carol"}]),
         ]
         assert glab_harness.resolve_comma_separated_usernames_to_ids(
-            "bob,carol", "fake-token"
+            "bob,carol", "fake-token", "git.coates.io"
         ) == [5, 8]
 
 
@@ -190,7 +272,9 @@ class TestCommandMergeRequestView:
             }
         )
         args = MagicMock(iid=88)
-        glab_harness.command_merge_request_view(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_view(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         output = capsys.readouterr().out
         assert "!88" in output
         assert "Tiered permissions" in output
@@ -213,7 +297,9 @@ class TestCommandMergeRequestCreate:
             reviewer=None,
             remove_source_branch=False,
         )
-        glab_harness.command_merge_request_create(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_create(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_request = mock_urlopen.call_args[0][0]
         sent_body = json.loads(sent_request.data)
         assert sent_body["source_branch"] == "feature/test"
@@ -238,7 +324,9 @@ class TestCommandMergeRequestCreate:
             reviewer=None,
             remove_source_branch=False,
         )
-        glab_harness.command_merge_request_create(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_create(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_body = json.loads(mock_urlopen.call_args[0][0].data)
         assert "special" in sent_body["description"]
         assert "&" in sent_body["description"]
@@ -257,7 +345,9 @@ class TestCommandMergeRequestUpdate:
             assignee=None,
             reviewer=None,
         )
-        glab_harness.command_merge_request_update(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_update(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_body = json.loads(mock_urlopen.call_args[0][0].data)
         assert sent_body["title"] == "New title"
 
@@ -275,7 +365,9 @@ class TestCommandMergeRequestUpdate:
             assignee=None,
             reviewer=None,
         )
-        glab_harness.command_merge_request_update(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_update(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_body = json.loads(mock_urlopen.call_args[0][0].data)
         assert "@mentions" in sent_body["description"]
 
@@ -285,7 +377,7 @@ class TestCommandMergeRequestUpdate:
         )
         with pytest.raises(SystemExit):
             glab_harness.command_merge_request_update(
-                args, "fake-token", "test/project"
+                args, "fake-token", "test/project", "git.coates.io"
             )
 
 
@@ -314,7 +406,7 @@ class TestCommandMergeRequestDiscussions:
         )
         args = MagicMock(iid=87)
         glab_harness.command_merge_request_discussions(
-            args, "fake-token", "test/project"
+            args, "fake-token", "test/project", "git.coates.io"
         )
         output = capsys.readouterr().out
         assert "Vishwa Shah" in output
@@ -338,7 +430,7 @@ class TestCommandMergeRequestDiscussions:
         )
         args = MagicMock(iid=87)
         glab_harness.command_merge_request_discussions(
-            args, "fake-token", "test/project"
+            args, "fake-token", "test/project", "git.coates.io"
         )
         output = capsys.readouterr().out
         assert "Brian" in output
@@ -361,7 +453,7 @@ class TestCommandMergeRequestDiscussions:
         )
         args = MagicMock(iid=87)
         glab_harness.command_merge_request_discussions(
-            args, "fake-token", "test/project"
+            args, "fake-token", "test/project", "git.coates.io"
         )
         output = capsys.readouterr().out
         assert "No comments" in output
@@ -371,7 +463,7 @@ class TestCommandMergeRequestDiscussions:
         mock_urlopen.return_value = make_mock_http_response([])
         args = MagicMock(iid=87)
         glab_harness.command_merge_request_discussions(
-            args, "fake-token", "test/project"
+            args, "fake-token", "test/project", "git.coates.io"
         )
         output = capsys.readouterr().out
         assert "No comments" in output
@@ -384,7 +476,9 @@ class TestCommandMergeRequestChanges:
             {"changes": [{"new_path": "src/app.tsx"}, {"new_path": "src/layout.css"}]}
         )
         args = MagicMock(iid=88)
-        glab_harness.command_merge_request_changes(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_changes(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         output = capsys.readouterr().out
         assert "2 files changed" in output
         assert "src/app.tsx" in output
@@ -397,7 +491,9 @@ class TestCommandMergeRequestClose:
             {"iid": 83, "state": "closed"}
         )
         args = MagicMock(iid=83)
-        glab_harness.command_merge_request_close(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_close(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         output = capsys.readouterr().out
         assert "!83 closed" in output
 
@@ -409,7 +505,9 @@ class TestCommandMergeRequestMerge:
             {"iid": 88, "state": "merged"}
         )
         args = MagicMock(iid=88, squash=False)
-        glab_harness.command_merge_request_merge(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_merge(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         output = capsys.readouterr().out
         assert "!88 merged" in output
 
@@ -419,7 +517,9 @@ class TestCommandMergeRequestMerge:
             {"iid": 88, "state": "merged"}
         )
         args = MagicMock(iid=88, squash=True)
-        glab_harness.command_merge_request_merge(args, "fake-token", "test/project")
+        glab_harness.command_merge_request_merge(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_body = json.loads(mock_urlopen.call_args[0][0].data)
         assert sent_body["squash"] is True
 
@@ -438,7 +538,9 @@ class TestCommandPipelines:
             ]
         )
         args = MagicMock(ref=None, count=5)
-        glab_harness.command_pipelines(args, "fake-token", "test/project")
+        glab_harness.command_pipelines(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         output = capsys.readouterr().out
         assert "#1000" in output
         assert "success" in output
@@ -447,7 +549,9 @@ class TestCommandPipelines:
     def test_filters_by_ref(self, mock_urlopen):
         mock_urlopen.return_value = make_mock_http_response([])
         args = MagicMock(ref="release/uat", count=5)
-        glab_harness.command_pipelines(args, "fake-token", "test/project")
+        glab_harness.command_pipelines(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_url = mock_urlopen.call_args[0][0].full_url
         assert "release" in sent_url
 
@@ -466,7 +570,9 @@ class TestCommandPipelineJobs:
             ]
         )
         args = MagicMock(pipeline_id=1000)
-        glab_harness.command_pipeline_jobs(args, "fake-token", "test/project")
+        glab_harness.command_pipeline_jobs(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         output = capsys.readouterr().out
         assert "build:uat" in output
         assert "success" in output
@@ -477,7 +583,9 @@ class TestCommandDeleteBranch:
     def test_deletes_branch_with_url_encoding(self, mock_urlopen, capsys):
         mock_urlopen.return_value = make_mock_http_response({})
         args = MagicMock(branch_name="release/uat-27-03-2026")
-        glab_harness.command_delete_branch(args, "fake-token", "test/project")
+        glab_harness.command_delete_branch(
+            args, "fake-token", "test/project", "git.coates.io"
+        )
         sent_url = mock_urlopen.call_args[0][0].full_url
         assert "release%2Fuat-27-03-2026" in sent_url
         output = capsys.readouterr().out
