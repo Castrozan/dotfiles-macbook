@@ -21,8 +21,13 @@ let
 in
 {
   home.activation.copyKarabinerConfig = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p "$HOME/.config/karabiner"
-    cat ${karabinerConfigFile} > "$HOME/.config/karabiner/karabiner.json"
-    chmod 644 "$HOME/.config/karabiner/karabiner.json"
+    destination="$HOME/.config/karabiner/karabiner.json"
+    source=${karabinerConfigFile}
+    mkdir -p "$(dirname "$destination")"
+    if ! /usr/bin/cmp -s "$source" "$destination"; then
+      cat "$source" > "$destination"
+      chmod 644 "$destination"
+      /bin/launchctl kickstart -k "gui/$(/usr/bin/id -u)/org.pqrs.service.agent.karabiner_console_user_server" || true
+    fi
   '';
 }
