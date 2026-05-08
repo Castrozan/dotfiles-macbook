@@ -6,13 +6,14 @@ import subprocess
 import sys
 
 from AppKit import NSWorkspace
-from Foundation import NSObject
+from Foundation import NSObject, NSTimer
 from PyObjCTools import AppHelper
 
 KARABINER_USER_SERVER_LAUNCHD_LABEL = (
     "org.pqrs.service.agent.karabiner_console_user_server"
 )
 LAUNCHCTL_BINARY_PATH = "/bin/launchctl"
+PERIODIC_KICK_INTERVAL_SECONDS = 900.0
 
 
 def restart_karabiner_user_server():
@@ -25,21 +26,31 @@ def restart_karabiner_user_server():
     )
 
 
-class KarabinerRestartOnWakeHandler(NSObject):
+class KarabinerRestartHandler(NSObject):
     def workspaceDidWake_(self, _notification):
+        restart_karabiner_user_server()
+
+    def periodicKickTimerFired_(self, _timer):
         restart_karabiner_user_server()
 
 
 def main():
     signal.signal(signal.SIGTERM, lambda _signum, _frame: sys.exit(0))
 
-    handler = KarabinerRestartOnWakeHandler.alloc().init()
+    handler = KarabinerRestartHandler.alloc().init()
     workspace_notification_center = NSWorkspace.sharedWorkspace().notificationCenter()
     workspace_notification_center.addObserver_selector_name_object_(
         handler,
         "workspaceDidWake:",
         "NSWorkspaceDidWakeNotification",
         None,
+    )
+    NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+        PERIODIC_KICK_INTERVAL_SECONDS,
+        handler,
+        "periodicKickTimerFired:",
+        None,
+        True,
     )
     AppHelper.runEventLoop()
 
