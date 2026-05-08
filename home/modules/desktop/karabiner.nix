@@ -27,7 +27,12 @@ in
     if ! /usr/bin/cmp -s "$source" "$destination"; then
       cat "$source" > "$destination"
       chmod 644 "$destination"
-      /bin/launchctl kickstart -k "gui/$(/usr/bin/id -u)/org.pqrs.service.agent.karabiner_console_user_server" || true
     fi
   '';
+
+  home.activation.kickKarabinerConsoleUserServerEveryRebuild =
+    config.lib.dag.entryAfter [ "setupLaunchAgents" ]
+      ''
+        /bin/launchctl kickstart -k "gui/$(/usr/bin/id -u)/org.pqrs.service.agent.karabiner_console_user_server" || true
+      '';
 }
