@@ -163,6 +163,16 @@ class AppIconProvider:
     def __init__(self):
         self._icon_cache = {}
 
+    def prewarm_cache_from_running_applications(self):
+        workspace = AppKit.NSWorkspace.sharedWorkspace()
+        for running_application in workspace.runningApplications():
+            app_name = running_application.localizedName()
+            if not app_name or app_name in self._icon_cache:
+                continue
+            icon = running_application.icon()
+            if icon:
+                self._icon_cache[app_name] = icon
+
     def get_icon_for_app_name(self, app_name):
         if app_name in self._icon_cache:
             return self._icon_cache[app_name]
@@ -189,12 +199,14 @@ class NonActivatingPanel(AppKit.NSPanel):
 
 
 class SwitcherOverlayPanel:
-    def __init__(self):
+    def __init__(self, icon_provider):
         self._panel = None
         self._background_view = None
-        self._card_views_with_borders = []
-        self._icon_provider = AppIconProvider()
+        self._pooled_cards = []
+        self._visible_card_count = 0
+        self._icon_provider = icon_provider
         self._create_floating_panel()
+        self._create_persistent_background_view()
 
     def _create_floating_panel(self):
         initial_frame = NSMakeRect(0, 0, 400, 200)
@@ -217,44 +229,9 @@ class SwitcherOverlayPanel:
             | AppKit.NSWindowCollectionBehaviorStationary
         )
 
-    def show_with_windows_and_selection(self, windows, selected_index):
-        self._remove_all_card_views()
-        self._build_overlay_with_cards(windows, selected_index)
-        self._center_on_main_screen()
-        performance_profiler.mark_phase("overlay_build_done")
-        self._panel.orderFrontRegardless()
-
-    def update_selected_index(self, selected_index):
-        for card_index, (card_view, border_view) in enumerate(
-            self._card_views_with_borders
-        ):
-            is_selected = card_index == selected_index
-            self._apply_card_selection_style(card_view, border_view, is_selected)
-
-    def hide(self):
-        self._panel.orderOut_(None)
-        self._remove_all_card_views()
-
-    def _remove_all_card_views(self):
-        if self._background_view:
-            self._background_view.removeFromSuperview()
-            self._background_view = None
-        self._card_views_with_borders = []
-
-    def _build_overlay_with_cards(self, windows, selected_index):
-        card_count = len(windows)
-        total_width = (
-            OVERLAY_PADDING * 2
-            + card_count * CARD_WIDTH
-            + max(0, card_count - 1) * CARD_SPACING
-        )
-        total_height = OVERLAY_PADDING * 2 + CARD_HEIGHT
-
-        panel_frame = NSMakeRect(0, 0, total_width, total_height)
-        self._panel.setFrame_display_(panel_frame, False)
-
+    def _create_persistent_background_view(self):
         self._background_view = AppKit.NSVisualEffectView.alloc().initWithFrame_(
-            NSMakeRect(0, 0, total_width, total_height)
+            NSMakeRect(0, 0, 400, 200)
         )
         self._background_view.setMaterial_(13)
         self._background_view.setBlendingMode_(0)
@@ -264,26 +241,63 @@ class SwitcherOverlayPanel:
         self._background_view.layer().setMasksToBounds_(True)
         self._panel.contentView().addSubview_(self._background_view)
 
-        for window_index, window_data in enumerate(windows):
-            horizontal_offset = OVERLAY_PADDING + window_index * (
-                CARD_WIDTH + CARD_SPACING
-            )
-            vertical_offset = OVERLAY_PADDING
-            is_selected = window_index == selected_index
+    def show_with_windows_and_selection(self, windows, selected_index):
+        self._resize_panel_for_card_count(len(windows))
+        self._populate_visible_cards(windows, selected_index)
+        self._center_on_main_screen()
+        performance_profiler.mark_phase("overlay_build_done")
+        self._panel.orderFrontRegardless()
 
-            card_view, border_view = self._create_window_card(
-                window_data, horizontal_offset, vertical_offset, is_selected
-            )
-            self._background_view.addSubview_(card_view)
-            self._card_views_with_borders.append((card_view, border_view))
+    def update_selected_index(self, selected_index):
+        for card_index in range(self._visible_card_count):
+            card = self._pooled_cards[card_index]
+            self._apply_card_selection_style(card, card_index == selected_index)
 
-    def _create_window_card(
-        self, window_data, horizontal_offset, vertical_offset, is_selected
-    ):
-        card_frame = NSMakeRect(
-            horizontal_offset, vertical_offset, CARD_WIDTH, CARD_HEIGHT
+    def hide(self):
+        self._panel.orderOut_(None)
+
+    def _resize_panel_for_card_count(self, card_count):
+        total_width = (
+            OVERLAY_PADDING * 2
+            + card_count * CARD_WIDTH
+            + max(0, card_count - 1) * CARD_SPACING
         )
-        card_view = AppKit.NSView.alloc().initWithFrame_(card_frame)
+        total_height = OVERLAY_PADDING * 2 + CARD_HEIGHT
+        self._panel.setFrame_display_(
+            NSMakeRect(0, 0, total_width, total_height), False
+        )
+        self._background_view.setFrame_(NSMakeRect(0, 0, total_width, total_height))
+
+    def _populate_visible_cards(self, windows, selected_index):
+        while len(self._pooled_cards) < len(windows):
+            self._pooled_cards.append(self._create_blank_card())
+
+        for card_index, card in enumerate(self._pooled_cards):
+            if card_index < len(windows):
+                window_data = windows[card_index]
+                horizontal_offset = OVERLAY_PADDING + card_index * (
+                    CARD_WIDTH + CARD_SPACING
+                )
+                card["card_view"].setFrameOrigin_(
+                    NSMakePoint(horizontal_offset, OVERLAY_PADDING)
+                )
+                app_name = window_data.get("app-name", "")
+                window_title = window_data.get("window-title", app_name)
+                card["icon_view"].setImage_(
+                    self._icon_provider.get_icon_for_app_name(app_name)
+                )
+                card["title_field"].setStringValue_(window_title)
+                card["card_view"].setHidden_(False)
+                self._apply_card_selection_style(card, card_index == selected_index)
+            else:
+                card["card_view"].setHidden_(True)
+
+        self._visible_card_count = len(windows)
+
+    def _create_blank_card(self):
+        card_view = AppKit.NSView.alloc().initWithFrame_(
+            NSMakeRect(0, OVERLAY_PADDING, CARD_WIDTH, CARD_HEIGHT)
+        )
         card_view.setWantsLayer_(True)
         card_view.layer().setCornerRadius_(CARD_CORNER_RADIUS)
 
@@ -295,8 +309,6 @@ class SwitcherOverlayPanel:
         border_view.layer().setBorderWidth_(SELECTION_BORDER_WIDTH)
         card_view.addSubview_(border_view)
 
-        app_name = window_data.get("app-name", "")
-        app_icon = self._icon_provider.get_icon_for_app_name(app_name)
         icon_horizontal_offset = (CARD_WIDTH - CARD_ICON_SIZE) / 2
         icon_vertical_offset = CARD_HEIGHT - CARD_ICON_SIZE - 16
         icon_image_view = AppKit.NSImageView.alloc().initWithFrame_(
@@ -307,14 +319,12 @@ class SwitcherOverlayPanel:
                 CARD_ICON_SIZE,
             )
         )
-        icon_image_view.setImage_(app_icon)
         icon_image_view.setImageScaling_(AppKit.NSImageScaleProportionallyUpOrDown)
         card_view.addSubview_(icon_image_view)
 
-        window_title = window_data.get("window-title", app_name)
-        title_frame = NSMakeRect(6, 4, CARD_WIDTH - 12, 28)
-        title_text_field = AppKit.NSTextField.alloc().initWithFrame_(title_frame)
-        title_text_field.setStringValue_(window_title)
+        title_text_field = AppKit.NSTextField.alloc().initWithFrame_(
+            NSMakeRect(6, 4, CARD_WIDTH - 12, 28)
+        )
         title_text_field.setBezeled_(False)
         title_text_field.setDrawsBackground_(False)
         title_text_field.setEditable_(False)
@@ -324,10 +334,18 @@ class SwitcherOverlayPanel:
         title_text_field.setMaximumNumberOfLines_(2)
         card_view.addSubview_(title_text_field)
 
-        self._apply_card_selection_style(card_view, border_view, is_selected)
-        return card_view, border_view
+        self._background_view.addSubview_(card_view)
+        return {
+            "card_view": card_view,
+            "border_view": border_view,
+            "icon_view": icon_image_view,
+            "title_field": title_text_field,
+        }
 
-    def _apply_card_selection_style(self, card_view, border_view, is_selected):
+    def _apply_card_selection_style(self, card, is_selected):
+        card_view = card["card_view"]
+        border_view = card["border_view"]
+        title_field = card["title_field"]
         if is_selected:
             card_view.layer().setBackgroundColor_(
                 AppKit.NSColor.controlAccentColor()
@@ -349,14 +367,12 @@ class SwitcherOverlayPanel:
         font_weight = (
             AppKit.NSFontWeightMedium if is_selected else AppKit.NSFontWeightRegular
         )
-        for subview in card_view.subviews():
-            if isinstance(subview, AppKit.NSTextField):
-                subview.setTextColor_(
-                    AppKit.NSColor.whiteColor().colorWithAlphaComponent_(text_alpha)
-                )
-                subview.setFont_(
-                    AppKit.NSFont.systemFontOfSize_weight_(TITLE_FONT_SIZE, font_weight)
-                )
+        title_field.setTextColor_(
+            AppKit.NSColor.whiteColor().colorWithAlphaComponent_(text_alpha)
+        )
+        title_field.setFont_(
+            AppKit.NSFont.systemFontOfSize_weight_(TITLE_FONT_SIZE, font_weight)
+        )
 
     def _center_on_main_screen(self):
         screen = AppKit.NSScreen.mainScreen()
@@ -377,6 +393,9 @@ class MostRecentlyUsedWindowTracker:
         if window_id in self._window_ids_by_recency:
             self._window_ids_by_recency.remove(window_id)
         self._window_ids_by_recency.insert(0, window_id)
+
+    def get_most_recently_focused_window_id(self):
+        return self._window_ids_by_recency[0] if self._window_ids_by_recency else None
 
     def sort_windows_by_recency(self, windows):
         window_id_to_position = {
@@ -476,7 +495,9 @@ class WindowSwitcherStateMachine:
         performance_profiler.mark_phase("worker_started")
         windows = self._aerospace.get_focused_workspace_windows()
         performance_profiler.mark_phase("ipc_workspace_done")
-        focused_window_id = self._aerospace.get_focused_window_id()
+        focused_window_id = self._mru_tracker.get_most_recently_focused_window_id()
+        if focused_window_id is None:
+            focused_window_id = self._aerospace.get_focused_window_id()
         performance_profiler.mark_phase("ipc_focus_done")
         AppHelper.callAfter(
             self._on_aerospace_windows_fetched, windows, focused_window_id
@@ -621,7 +642,9 @@ def main():
     application.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
 
     aerospace_provider = AeroSpaceWindowProvider()
-    overlay_panel = SwitcherOverlayPanel()
+    icon_provider = AppIconProvider()
+    icon_provider.prewarm_cache_from_running_applications()
+    overlay_panel = SwitcherOverlayPanel(icon_provider)
     mru_tracker = MostRecentlyUsedWindowTracker()
     switcher_state = WindowSwitcherStateMachine(
         aerospace_provider, overlay_panel, mru_tracker
