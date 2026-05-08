@@ -4,7 +4,7 @@ import socket
 import tempfile
 import threading
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -515,6 +515,14 @@ class TestAeroSpaceWindowProviderIpcCommands:
     def test_parses_focused_workspace_windows(self):
         provider = daemon.AeroSpaceWindowProvider()
         windows_json = '[{"window-id": 1, "app-name": "Test", "window-title": "t"}]'
+        ipc_response = json.dumps(
+            {
+                "exitCode": 0,
+                "stdout": windows_json,
+                "stderr": "",
+                "serverVersionAndHash": "test",
+            }
+        )
         with patch.object(provider, "_send_ipc_command", return_value=windows_json):
             result = provider.get_focused_workspace_windows()
         assert len(result) == 1
@@ -828,7 +836,6 @@ class TestMruWindowOrderingIntegration:
         tracker.record_focused_window(1004)
         tracker.record_focused_window(1002)
         tracker.record_focused_window(1003)
-        tracker.record_focused_window(1001)
 
         state = daemon.WindowSwitcherStateMachine(
             mock_aerospace_provider, mock_overlay, tracker
@@ -855,7 +862,6 @@ class TestMruWindowOrderingIntegration:
         tracker = daemon.MostRecentlyUsedWindowTracker()
         tracker.record_focused_window(20)
         tracker.record_focused_window(30)
-        tracker.record_focused_window(10)
 
         state = daemon.WindowSwitcherStateMachine(
             mock_aerospace_provider, mock_overlay, tracker
