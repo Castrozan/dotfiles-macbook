@@ -163,6 +163,16 @@ class AppIconProvider:
     def __init__(self):
         self._icon_cache = {}
 
+    def prewarm_cache_from_running_applications(self):
+        workspace = AppKit.NSWorkspace.sharedWorkspace()
+        for running_application in workspace.runningApplications():
+            app_name = running_application.localizedName()
+            if not app_name or app_name in self._icon_cache:
+                continue
+            icon = running_application.icon()
+            if icon:
+                self._icon_cache[app_name] = icon
+
     def get_icon_for_app_name(self, app_name):
         if app_name in self._icon_cache:
             return self._icon_cache[app_name]
@@ -189,11 +199,11 @@ class NonActivatingPanel(AppKit.NSPanel):
 
 
 class SwitcherOverlayPanel:
-    def __init__(self):
+    def __init__(self, icon_provider):
         self._panel = None
         self._background_view = None
         self._card_views_with_borders = []
-        self._icon_provider = AppIconProvider()
+        self._icon_provider = icon_provider
         self._create_floating_panel()
 
     def _create_floating_panel(self):
@@ -621,7 +631,9 @@ def main():
     application.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
 
     aerospace_provider = AeroSpaceWindowProvider()
-    overlay_panel = SwitcherOverlayPanel()
+    icon_provider = AppIconProvider()
+    icon_provider.prewarm_cache_from_running_applications()
+    overlay_panel = SwitcherOverlayPanel(icon_provider)
     mru_tracker = MostRecentlyUsedWindowTracker()
     switcher_state = WindowSwitcherStateMachine(
         aerospace_provider, overlay_panel, mru_tracker
