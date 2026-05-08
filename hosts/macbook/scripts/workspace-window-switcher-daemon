@@ -5,7 +5,6 @@ import json
 import os
 import socket
 import threading
-import time
 import warnings
 
 warnings.filterwarnings("ignore", message="PyObjCPointer created")
@@ -16,7 +15,6 @@ from PyObjCTools import AppHelper
 
 SOCKET_PATH = "/tmp/workspace-switcher.sock"
 ACTIVE_FLAG_PATH = "/tmp/workspace-switcher.active"
-PERFORMANCE_LOG_PATH = "/tmp/workspace-switcher-perf.log"
 CARD_WIDTH = 140
 CARD_HEIGHT = 120
 CARD_ICON_SIZE = 64
@@ -27,65 +25,6 @@ CARD_CORNER_RADIUS = 10
 TITLE_FONT_SIZE = 11
 SELECTION_BORDER_WIDTH = 3
 COMMIT_TIMEOUT_SECONDS = 10.0
-
-
-class ActivationPerformanceProfiler:
-    PHASE_ORDER = (
-        "begin",
-        "worker_started",
-        "ipc_workspace_done",
-        "ipc_focus_done",
-        "main_callback",
-        "mru_sort_done",
-        "overlay_build_done",
-        "overlay_visible",
-    )
-
-    def __init__(self, log_path):
-        self._log_path = log_path
-        self._lock = threading.Lock()
-        self._reset_locked()
-
-    def _reset_locked(self):
-        self._timestamps_ns_by_phase = {}
-        self._workspace_window_count = 0
-
-    def begin_new_activation(self):
-        with self._lock:
-            self._reset_locked()
-            self._timestamps_ns_by_phase["begin"] = time.perf_counter_ns()
-
-    def mark_phase(self, phase_name):
-        with self._lock:
-            if "begin" not in self._timestamps_ns_by_phase:
-                return
-            self._timestamps_ns_by_phase[phase_name] = time.perf_counter_ns()
-
-    def record_workspace_window_count(self, count):
-        with self._lock:
-            self._workspace_window_count = count
-
-    def emit_activation_report(self):
-        with self._lock:
-            timestamps = dict(self._timestamps_ns_by_phase)
-            window_count = self._workspace_window_count
-            self._reset_locked()
-        if "begin" not in timestamps:
-            return
-        baseline_ns = timestamps.pop("begin")
-        line_parts = [f"windows={window_count}"]
-        for phase_name in self.PHASE_ORDER[1:]:
-            if phase_name in timestamps:
-                delta_ms = (timestamps[phase_name] - baseline_ns) / 1e6
-                line_parts.append(f"{phase_name}={delta_ms:.3f}")
-        try:
-            with open(self._log_path, "a") as log_file:
-                log_file.write(" ".join(line_parts) + "\n")
-        except OSError:
-            pass
-
-
-performance_profiler = ActivationPerformanceProfiler(PERFORMANCE_LOG_PATH)
 
 
 class AeroSpaceWindowProvider:
@@ -221,7 +160,6 @@ class SwitcherOverlayPanel:
         self._remove_all_card_views()
         self._build_overlay_with_cards(windows, selected_index)
         self._center_on_main_screen()
-        performance_profiler.mark_phase("overlay_build_done")
         self._panel.orderFrontRegardless()
 
     def update_selected_index(self, selected_index):
@@ -464,7 +402,6 @@ class WindowSwitcherStateMachine:
             pass
 
     def _begin_activation_with_direction(self, initial_direction):
-        performance_profiler.begin_new_activation()
         self._active = True
         self._create_active_flag_file()
         self._fetching_windows = True
@@ -473,18 +410,13 @@ class WindowSwitcherStateMachine:
         threading.Thread(target=self._fetch_windows_from_aerospace, daemon=True).start()
 
     def _fetch_windows_from_aerospace(self):
-        performance_profiler.mark_phase("worker_started")
         windows = self._aerospace.get_focused_workspace_windows()
-        performance_profiler.mark_phase("ipc_workspace_done")
         focused_window_id = self._aerospace.get_focused_window_id()
-        performance_profiler.mark_phase("ipc_focus_done")
         AppHelper.callAfter(
             self._on_aerospace_windows_fetched, windows, focused_window_id
         )
 
     def _on_aerospace_windows_fetched(self, windows, focused_window_id):
-        performance_profiler.mark_phase("main_callback")
-        performance_profiler.record_workspace_window_count(len(windows))
         self._fetching_windows = False
 
         if not windows:
@@ -495,7 +427,6 @@ class WindowSwitcherStateMachine:
         self._mru_tracker.remove_stale_window_ids(current_window_ids)
         self._mru_tracker.record_focused_window(focused_window_id)
         self._windows = self._mru_tracker.sort_windows_by_recency(windows)
-        performance_profiler.mark_phase("mru_sort_done")
 
         total_direction = self._pending_direction_changes
         if total_direction > 0:
@@ -514,8 +445,6 @@ class WindowSwitcherStateMachine:
         self._overlay.show_with_windows_and_selection(
             self._windows, self._selected_index
         )
-        performance_profiler.mark_phase("overlay_visible")
-        performance_profiler.emit_activation_report()
         self._restart_commit_timeout()
 
     def _advance_selection_by(self, direction):
