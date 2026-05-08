@@ -5,7 +5,7 @@
       name = "summon-chrome";
       runtimeInputs = [ pkgs.aerospace ];
       text = ''
-        exec ${./summon-browser.sh} "Google Chrome"
+        exec ${pkgs.bash}/bin/bash ${./summon-browser.sh} "Google Chrome"
       '';
     })
   ];

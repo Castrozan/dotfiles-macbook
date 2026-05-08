@@ -5,7 +5,7 @@
       name = "summon-brave";
       runtimeInputs = [ pkgs.aerospace ];
       text = ''
-        exec ${./summon-browser.sh} "Brave Browser"
+        exec ${pkgs.bash}/bin/bash ${./summon-browser.sh} "Brave Browser"
       '';
     })
   ];
