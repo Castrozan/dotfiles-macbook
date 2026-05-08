@@ -419,7 +419,7 @@ class WindowSwitcherStateMachine:
     def _on_aerospace_windows_fetched(self, windows, focused_window_id):
         self._fetching_windows = False
 
-        if len(windows) <= 1:
+        if not windows:
             self._deactivate()
             return
 

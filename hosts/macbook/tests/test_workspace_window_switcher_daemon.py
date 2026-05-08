@@ -33,9 +33,7 @@ class TestStateMachineActivation:
         assert state.is_active
         mock_overlay.show_with_windows_and_selection.assert_called_once()
 
-    def test_does_not_activate_with_single_window(
-        self, mock_aerospace_provider, mock_overlay
-    ):
+    def test_activates_with_single_window(self, mock_aerospace_provider, mock_overlay):
         mock_aerospace_provider.get_focused_workspace_windows.return_value = [
             {"window-id": 1001, "app-name": "WezTerm", "window-title": "term"}
         ]
@@ -46,8 +44,8 @@ class TestStateMachineActivation:
             daemon.MostRecentlyUsedWindowTracker(),
         )
         state.handle_next_command()
-        assert not state.is_active
-        mock_overlay.show_with_windows_and_selection.assert_not_called()
+        assert state.is_active
+        mock_overlay.show_with_windows_and_selection.assert_called_once()
 
     def test_does_not_activate_with_zero_windows(
         self, mock_aerospace_provider, mock_overlay
