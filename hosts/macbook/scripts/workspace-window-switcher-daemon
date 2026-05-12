@@ -217,11 +217,13 @@ class SwitcherOverlayPanel:
                 False,
             )
         )
-        self._panel.setLevel_(25)
+        self._panel.setLevel_(AppKit.NSPopUpMenuWindowLevel)
         self._panel.setOpaque_(False)
         self._panel.setBackgroundColor_(AppKit.NSColor.clearColor())
         self._panel.setHasShadow_(True)
         self._panel.setIgnoresMouseEvents_(True)
+        self._panel.setHidesOnDeactivate_(False)
+        self._panel.setAlphaValue_(1.0)
         self._panel.setCollectionBehavior_(
             AppKit.NSWindowCollectionBehaviorCanJoinAllSpaces
             | AppKit.NSWindowCollectionBehaviorStationary
@@ -272,6 +274,9 @@ class SwitcherOverlayPanel:
         self._background_view.setWantsLayer_(True)
         self._background_view.layer().setCornerRadius_(OVERLAY_CORNER_RADIUS)
         self._background_view.layer().setMasksToBounds_(True)
+        self._background_view.layer().setBackgroundColor_(
+            AppKit.NSColor.blackColor().colorWithAlphaComponent_(0.7).CGColor()
+        )
         self._panel.contentView().addSubview_(self._background_view)
 
         for window_index, window_data in enumerate(windows):
