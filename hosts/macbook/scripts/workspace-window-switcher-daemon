@@ -204,7 +204,6 @@ class SwitcherOverlayPanel:
         self._background_view = None
         self._card_views_with_borders = []
         self._icon_provider = icon_provider
-        self._create_floating_panel()
 
     def _create_floating_panel(self):
         initial_frame = NSMakeRect(0, 0, 400, 200)
@@ -217,6 +216,7 @@ class SwitcherOverlayPanel:
                 False,
             )
         )
+        self._panel.setReleasedWhenClosed_(False)
         self._panel.setLevel_(AppKit.NSPopUpMenuWindowLevel)
         self._panel.setOpaque_(False)
         self._panel.setBackgroundColor_(AppKit.NSColor.clearColor())
@@ -230,7 +230,7 @@ class SwitcherOverlayPanel:
         )
 
     def show_with_windows_and_selection(self, windows, selected_index):
-        self._remove_all_card_views()
+        self._create_floating_panel()
         self._build_overlay_with_cards(windows, selected_index)
         self._center_on_main_screen()
         performance_profiler.mark_phase("overlay_build_done")
@@ -244,13 +244,11 @@ class SwitcherOverlayPanel:
             self._apply_card_selection_style(card_view, border_view, is_selected)
 
     def hide(self):
-        self._panel.orderOut_(None)
-        self._remove_all_card_views()
-
-    def _remove_all_card_views(self):
-        if self._background_view:
-            self._background_view.removeFromSuperview()
-            self._background_view = None
+        if self._panel is not None:
+            self._panel.orderOut_(None)
+            self._panel.close()
+            self._panel = None
+        self._background_view = None
         self._card_views_with_borders = []
 
     def _build_overlay_with_cards(self, windows, selected_index):
