@@ -5,7 +5,6 @@ let
       (pythonPackages: [
         pythonPackages.pyobjc-core
         pythonPackages.pyobjc-framework-Cocoa
-        pythonPackages.pyobjc-framework-Quartz
       ]);
 in
 {

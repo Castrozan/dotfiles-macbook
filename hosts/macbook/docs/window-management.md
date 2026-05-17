@@ -28,19 +28,64 @@ home/modules/desktop/karabiner/
 ├── restart-on-wake/
 │   ├── launchd-agent.nix                    # home-manager launchd.agents.karabiner-restart-on-wake
 │   └── scripts/karabiner-restart-on-wake-daemon
-└── orphan-launchd-cleanup/
-    ├── home-manager-activation.nix
-    └── scripts/remove-orphan-nix-darwin-karabiner-launchd-entries
+├── status/
+│   ├── home-manager-binary.nix              # wires karabiner-status into home.packages
+│   └── scripts/karabiner-status
+├── orphan-launchd-cleanup/
+│   ├── home-manager-activation.nix
+│   └── scripts/remove-orphan-nix-darwin-karabiner-launchd-entries
+└── tests/
+    ├── conftest.py
+    ├── test_karabiner_restart_on_wake_daemon.py
+    └── test_karabiner_status_cli.py
 ```
 
 Config flow: `rules/default.nix` returns the rule list, `config-deployment/copy-rules-json-to-user-config-directory.nix` serializes it to `~/.config/karabiner/karabiner.json` (only when content differs, preserving inode), and `config-deployment/kick-console-user-server-every-rebuild.nix` runs `launchctl kickstart -k karabiner_console_user_server` so the new config loads immediately.
 
-### Karabiner restart-on-wake daemon
+### Karabiner health-monitor daemon (IPC probe + passive observability)
 
-`restart-on-wake/launchd-agent.nix` declares a home-manager LaunchAgent labelled `com.dotfiles.karabiner-restart-on-wake` that runs the Python daemon in `restart-on-wake/scripts/karabiner-restart-on-wake-daemon`. The daemon calls `launchctl kickstart -k karabiner_console_user_server`:
+`restart-on-wake/launchd-agent.nix` declares a home-manager LaunchAgent labelled `com.dotfiles.karabiner-restart-on-wake` that runs the Python daemon at `restart-on-wake/scripts/karabiner-restart-on-wake-daemon`. The daemon does three things:
 
-- on `NSWorkspaceDidWakeNotification`, because Karabiner can lose grab state across sleep/wake;
-- every 900 seconds, because the user server can silently degrade (process alive, devices grabbed, shell_command rules stop firing). The periodic kick bounds the recovery window.
+1. **Full health probe every 60s.** Two parts: (a) passive checks — `pgrep -x` for both `Karabiner-Core-Service` and `karabiner_console_user_server`, plus mtime of each Karabiner-managed log file; (b) IPC probe — `karabiner_cli --show-current-profile-name` and `karabiner_cli --list-connected-devices` with a 5s timeout. The IPC probe roundtrips through `karabiner_console_user_server` itself — the same component that silently degrades — so a failed probe is evidence that rules may also stop firing. Reactive kicking on probe failure is enabled (`KARABINER_CLI_IPC_PROBE_FAILURE_KICK_IS_ENABLED = True`), gated by `CONSECUTIVE_IPC_PROBE_FAILURES_REQUIRED_BEFORE_KICK = 3` consecutive failures and a `MINIMUM_SECONDS_BETWEEN_REACTIVE_KICKS = 300s` cooldown to prevent cascading kicks. Steady-state probe latency from the launchd-managed daemon is 1-2 seconds (vs ~70ms from a shell); the 5s timeout accommodates that with margin. Observe `karabiner-status` over the first few days after enabling — if reactive kicks fire only after wake events or rebuilds, the safeguards are doing their job and the 30-min periodic safety net can be dropped.
+2. **Wake-event kick.** On `NSWorkspaceDidWakeNotification`, kicks `karabiner_console_user_server` unconditionally because Karabiner reliably loses HID grab state across sleep/wake.
+3. **Periodic safety-net kick every 30 minutes.** Last-resort backstop for failure modes the IPC probe cannot detect (e.g. degradation that affects rule firing without breaking the IPC channel). Was 15 min before the IPC probe was added.
+
+CGEventPost-based active canary was tried and removed: macOS gates keyboard event posting from launchd-managed processes behind Accessibility permission, which cannot be granted persistently to a binary whose nix store path changes every rebuild. `karabiner_cli` is a stable-path binary shipped by Karabiner-Elements itself, requires no permissions, and exercises the same IPC channel as rule firing.
+
+### Health observability
+
+The daemon maintains two files in `/tmp`:
+
+- `/tmp/karabiner-health.json` - structured health state read by the `karabiner-status` CLI. Keys: `daemon_started_epoch`, `daemon_process_id`, `last_health_probe_epoch`, `karabiner_core_service_process_running`, `karabiner_console_user_server_process_running`, `karabiner_core_service_log_mtime_epoch`, `karabiner_console_user_server_log_mtime_epoch`, `karabiner_cli_ipc_probe_succeeded`, `karabiner_cli_ipc_probe_latency_seconds`, `karabiner_cli_ipc_probe_failure_reason`, `karabiner_current_profile_name`, `karabiner_grabbed_keyboard_device_count`, `karabiner_cli_ipc_probe_failure_count_total`, `last_kick_epoch`, `last_kick_reason`, `last_kick_duration_seconds`, `last_wake_epoch`, `kick_count_total`.
+- `/tmp/karabiner-daemon.log` - one JSON event per line. `event` values: `daemon_started`, `wake`, `health_probe`, `ipc_probe_degraded_detected`, `kick_attempt`, `kick_completed`. Each line carries `epoch` and `iso8601` timestamps.
+
+`kick_reason` values: `wake`, `karabiner_cli_ipc_probe_failure`, `periodic_safety_net`.
+
+Karabiner-Elements writes its own structured logs at `~/.local/share/karabiner/log/console_user_server.log` (per-user, owned) and `/var/log/karabiner/core_service.log` (root-owned, world-readable). The daemon never writes to these but uses their mtime as a freshness signal in the health file.
+
+### `karabiner-status` CLI
+
+`status/home-manager-binary.nix` exposes `karabiner-status` on PATH. Reads the health file and prints a human summary:
+
+```
+$ karabiner-status
+Karabiner daemon: HEALTHY
+  Daemon process:                pid=51849, started 3.2h ago
+  Karabiner-Core-Service:        running
+  karabiner_console_user_server: running
+  karabiner_cli IPC probe:       OK (62ms latency)
+  Current Karabiner profile:     Default
+  Grabbed keyboard devices:      5
+  Last health probe:             12s ago
+  Core service log last write:   4s ago
+  User server log last write:    8s ago
+  Last kick:                     27m ago (reason: periodic_safety_net)
+  Last wake:                     2.1h ago
+  Total kicks:                   7
+  IPC probe failures total:      0
+```
+
+Flags: `--json` for raw JSON, `--log-tail N` to append the last N event log lines. Exit code is 0 when both Karabiner processes are running AND the last IPC probe succeeded, 1 otherwise (script-friendly for monitoring).
 
 ### Orphan launchd cleanup
 
