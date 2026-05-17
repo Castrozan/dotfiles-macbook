@@ -1,9 +1,12 @@
 { pkgs, ... }:
 let
-  pythonInterpreterWithAppKitForRestartOnWakeDaemon = pkgs.python312.withPackages (pythonPackages: [
-    pythonPackages.pyobjc-core
-    pythonPackages.pyobjc-framework-Cocoa
-  ]);
+  pythonInterpreterWithFrameworksForRestartOnWakeDaemon =
+    pkgs.python312.withPackages
+      (pythonPackages: [
+        pythonPackages.pyobjc-core
+        pythonPackages.pyobjc-framework-Cocoa
+        pythonPackages.pyobjc-framework-Quartz
+      ]);
 in
 {
   launchd.agents.karabiner-restart-on-wake = {
@@ -11,7 +14,7 @@ in
     config = {
       Label = "com.dotfiles.karabiner-restart-on-wake";
       ProgramArguments = [
-        "${pythonInterpreterWithAppKitForRestartOnWakeDaemon}/bin/python3"
+        "${pythonInterpreterWithFrameworksForRestartOnWakeDaemon}/bin/python3"
         "${./scripts/karabiner-restart-on-wake-daemon}"
       ];
       KeepAlive = true;
