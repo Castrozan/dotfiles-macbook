@@ -90,16 +90,20 @@ final class WindowSwitcherStateMachine: SocketCommandHandling {
         isFetchingWindows = true
         commitRequestedBeforeFetchCompleted = false
         accumulatedPendingDirectionChanges = initialDirection
+        let cachedFocusedWindowIdentifier = mruTracker.currentlyFocusedWindowIdentifier
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.fetchWindowsFromProviderOnBackgroundThread()
+            self?.fetchWindowsFromProviderOnBackgroundThread(
+                cachedFocusedWindowIdentifier: cachedFocusedWindowIdentifier
+            )
         }
     }
 
-    private func fetchWindowsFromProviderOnBackgroundThread() {
+    private func fetchWindowsFromProviderOnBackgroundThread(cachedFocusedWindowIdentifier: Int?) {
         performanceProfiler.markPhase("worker_started")
         let workspaceWindows = windowProvider.getFocusedWorkspaceWindows()
         performanceProfiler.markPhase("ipc_workspace_done")
-        let focusedWindowIdentifier = windowProvider.getFocusedWindowIdentifier()
+        let focusedWindowIdentifier = cachedFocusedWindowIdentifier
+            ?? windowProvider.getFocusedWindowIdentifier()
         performanceProfiler.markPhase("ipc_focus_done")
         DispatchQueue.main.async { [weak self] in
             self?.onWindowsFetched(

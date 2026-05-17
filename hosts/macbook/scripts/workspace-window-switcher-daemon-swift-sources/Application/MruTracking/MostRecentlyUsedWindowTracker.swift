@@ -3,6 +3,10 @@ import Foundation
 final class MostRecentlyUsedWindowTracker: MruTracking {
     private var windowIdentifiersOrderedByRecency: [Int] = []
 
+    var currentlyFocusedWindowIdentifier: Int? {
+        return windowIdentifiersOrderedByRecency.first
+    }
+
     func recordFocusedWindow(_ windowIdentifier: Int) {
         if let existingIndex = windowIdentifiersOrderedByRecency.firstIndex(of: windowIdentifier) {
             windowIdentifiersOrderedByRecency.remove(at: existingIndex)
