@@ -400,8 +400,18 @@ def test_mru_picks_previously_focused_window_on_next_then_commit():
         print("  SKIP: could not find a second distinct window")
         return True
 
-    focus_window_via_aerospace_and_wait(window_id_a)
     focus_window_via_aerospace_and_wait(window_id_b)
+
+    other_workspace_window_ids = [
+        wid for wid in workspace_window_ids if wid != window_id_a and wid != window_id_b
+    ]
+    for other_window_id in other_workspace_window_ids:
+        send_command_to_daemon(f"focus:{other_window_id}")
+        time.sleep(COMMAND_SETTLE_DELAY_SECONDS / 3)
+    send_command_to_daemon(f"focus:{window_id_a}")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS / 3)
+    send_command_to_daemon(f"focus:{window_id_b}")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS / 3)
 
     starting_focused_id = query_aerospace_focused_window_id()
     if starting_focused_id != window_id_b:
@@ -554,12 +564,24 @@ def test_auto_commit_fires_after_timeout_seconds():
     return True
 
 
+def run_with_cleanup(test_function):
+    send_command_to_daemon("cancel")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS / 2)
+    try:
+        return test_function()
+    finally:
+        send_command_to_daemon("cancel")
+        time.sleep(COMMAND_SETTLE_DELAY_SECONDS / 2)
+
+
 def main():
     print("=== workspace-window-switcher integration tests ===")
     print()
 
     if not ensure_daemon_is_running():
         return
+
+    include_slow_tests = os.environ.get("WWS_RUN_SLOW_TESTS") == "1"
 
     all_tests = [
         test_karabiner_core_service_is_running,
@@ -573,14 +595,20 @@ def main():
         test_cancel_during_active_clears_flag_without_changing_focus,
         test_reactivation_after_commit_starts_fresh_cycle,
         test_focus_socket_message_updates_internal_mru,
-        test_auto_commit_fires_after_timeout_seconds,
     ]
+    if include_slow_tests:
+        all_tests.append(test_auto_commit_fires_after_timeout_seconds)
+    else:
+        print(
+            "INFO: skipping slow auto-commit test (set WWS_RUN_SLOW_TESTS=1 to include)"
+        )
+        print()
 
     passed_count = 0
     failed_count = 0
 
     for test_function in all_tests:
-        result = test_function()
+        result = run_with_cleanup(test_function)
         if result:
             passed_count += 1
         else:
