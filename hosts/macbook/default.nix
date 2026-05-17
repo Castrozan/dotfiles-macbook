@@ -13,6 +13,7 @@
     ./quit-windowless-applications.nix
     ./workspace-window-switcher.nix
     ./scripts/rebuild.nix
+    ./karabiner/homebrew-cask.nix
   ];
   users.users.${username} = {
     name = username;
@@ -104,7 +105,6 @@
       "brave-browser"
       "dbeaver-community"
       "docker"
-      "karabiner-elements"
       "obsidian"
     ];
   };

@@ -16,7 +16,7 @@ Karabiner-Elements 15.x is installed via the homebrew cask `karabiner-elements` 
 - `karabiner_console_user_server` (per-user launchd agent `org.pqrs.service.agent.karabiner_console_user_server`) loads `~/.config/karabiner/karabiner.json` and pushes rules to the core service.
 - `Karabiner-VirtualHIDDevice-Daemon` plus the DriverKit system extension `org.pqrs.Karabiner-DriverKit-VirtualHIDDevice` provide the virtual keyboard and mouse used to post the remapped events back into the system.
 
-All karabiner-related modules and scripts live under `home/modules/desktop/karabiner/`:
+Install (Homebrew cask) lives at `hosts/macbook/karabiner/homebrew-cask.nix` because `homebrew.casks` is a nix-darwin system-level option and cannot sit inside a home-manager module. Everything else (rules, deployment, restart-on-wake daemon, orphan cleanup) is user-scoped under `home/modules/desktop/karabiner/`:
 
 ```
 home/modules/desktop/karabiner/
