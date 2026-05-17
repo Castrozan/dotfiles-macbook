@@ -4,7 +4,7 @@
   ...
 }:
 {
-  system.activationScripts.displays.text = lib.mkAfter ''
+  system.activationScripts.postActivation.text = lib.mkAfter ''
     echo "configuring display settings..." >&2
 
     USER_UUID=$(/usr/bin/dscl . -read /Users/${username} GeneratedUID | /usr/bin/awk '{print $2}')
