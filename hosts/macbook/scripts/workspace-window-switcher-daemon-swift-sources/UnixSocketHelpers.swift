@@ -55,15 +55,24 @@ enum UnixSocketConnector {
 }
 
 enum UnixSocketBinder {
-    static func bindAndListenStreamSocket(
+    static func bindDatagramSocket(
         atPath path: String,
-        listenBacklog: Int32,
-        fileMode: mode_t
+        fileMode: mode_t,
+        receiveBufferBytes: Int32
     ) -> Int32? {
         try? FileManager.default.removeItem(atPath: path)
 
-        let descriptor = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
+        let descriptor = Darwin.socket(AF_UNIX, SOCK_DGRAM, 0)
         if descriptor < 0 { return nil }
+
+        var requestedReceiveBufferBytes = receiveBufferBytes
+        _ = Darwin.setsockopt(
+            descriptor,
+            SOL_SOCKET,
+            SO_RCVBUF,
+            &requestedReceiveBufferBytes,
+            socklen_t(MemoryLayout<Int32>.size)
+        )
 
         guard var address = UnixSocketAddressBuilder.buildSocketAddress(forPath: path) else {
             Darwin.close(descriptor)
@@ -81,10 +90,6 @@ enum UnixSocketBinder {
         }
         path.withCString { pathCString in
             _ = Darwin.chmod(pathCString, fileMode)
-        }
-        if Darwin.listen(descriptor, listenBacklog) < 0 {
-            Darwin.close(descriptor)
-            return nil
         }
         return descriptor
     }

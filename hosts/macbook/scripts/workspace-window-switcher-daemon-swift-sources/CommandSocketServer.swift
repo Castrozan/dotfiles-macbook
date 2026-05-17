@@ -29,66 +29,60 @@ final class SocketCommandMainThreadDispatcher {
 
 final class CommandSocketServer {
     private let socketPath: String
-    private let listenBacklog: Int32
     private let socketFileMode: mode_t
-    private let clientReadBufferSize: Int
-    private let clientReadTimeoutMicroseconds: Int32
+    private let datagramReadBufferSize: Int
+    private let kernelReceiveBufferBytes: Int32
     private let onCommandReceived: (String) -> Void
 
     init(
         socketPath: String,
-        listenBacklog: Int32,
         socketFileMode: mode_t,
-        clientReadBufferSize: Int,
-        clientReadTimeoutMicroseconds: Int32,
+        datagramReadBufferSize: Int,
+        kernelReceiveBufferBytes: Int32,
         onCommandReceived: @escaping (String) -> Void
     ) {
         self.socketPath = socketPath
-        self.listenBacklog = listenBacklog
         self.socketFileMode = socketFileMode
-        self.clientReadBufferSize = clientReadBufferSize
-        self.clientReadTimeoutMicroseconds = clientReadTimeoutMicroseconds
+        self.datagramReadBufferSize = datagramReadBufferSize
+        self.kernelReceiveBufferBytes = kernelReceiveBufferBytes
         self.onCommandReceived = onCommandReceived
     }
 
-    func startAcceptingConnectionsOnBackgroundThread() {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.runAcceptLoopUntilTerminated()
+    func startReceivingDatagramsOnBackgroundThread() {
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            self?.runReceiveLoopUntilTerminated()
         }
     }
 
-    private func runAcceptLoopUntilTerminated() {
-        guard let serverDescriptor = UnixSocketBinder.bindAndListenStreamSocket(
+    private func runReceiveLoopUntilTerminated() {
+        guard let serverDescriptor = UnixSocketBinder.bindDatagramSocket(
             atPath: socketPath,
-            listenBacklog: listenBacklog,
-            fileMode: socketFileMode
+            fileMode: socketFileMode,
+            receiveBufferBytes: kernelReceiveBufferBytes
         ) else { return }
 
+        var readBuffer = [UInt8](repeating: 0, count: datagramReadBufferSize)
         while true {
-            let clientDescriptor = Darwin.accept(serverDescriptor, nil, nil)
-            if clientDescriptor < 0 { continue }
-            configureClientReceiveTimeout(clientDescriptor: clientDescriptor)
-            readAndForwardClientCommand(clientDescriptor: clientDescriptor)
+            let bytesRead = readBuffer.withUnsafeMutableBufferPointer { bufferPointer -> Int in
+                return Darwin.recvfrom(serverDescriptor, bufferPointer.baseAddress, bufferPointer.count, 0, nil, nil)
+            }
+            if bytesRead <= 0 { continue }
+            let receivedData = Data(readBuffer.prefix(bytesRead))
+            guard let receivedString = String(data: receivedData, encoding: .utf8) else { continue }
+            let trimmedPayload = receivedString.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedPayload.isEmpty { continue }
+            let normalizedCommand = extractCommandFromKarabinerPayload(trimmedPayload)
+            if normalizedCommand.isEmpty { continue }
+            onCommandReceived(normalizedCommand)
         }
     }
 
-    private func configureClientReceiveTimeout(clientDescriptor: Int32) {
-        var clientReceiveTimeout = timeval(tv_sec: 0, tv_usec: clientReadTimeoutMicroseconds)
-        let timevalLength = socklen_t(MemoryLayout<timeval>.size)
-        _ = Darwin.setsockopt(clientDescriptor, SOL_SOCKET, SO_RCVTIMEO, &clientReceiveTimeout, timevalLength)
-    }
-
-    private func readAndForwardClientCommand(clientDescriptor: Int32) {
-        var readBuffer = [UInt8](repeating: 0, count: clientReadBufferSize)
-        let bytesRead = readBuffer.withUnsafeMutableBufferPointer { bufferPointer -> Int in
-            return Darwin.recv(clientDescriptor, bufferPointer.baseAddress, bufferPointer.count, 0)
+    private func extractCommandFromKarabinerPayload(_ payload: String) -> String {
+        guard let payloadData = payload.data(using: .utf8) else { return payload }
+        let jsonObject = try? JSONSerialization.jsonObject(with: payloadData, options: [.fragmentsAllowed])
+        if let stringPayload = jsonObject as? String {
+            return stringPayload.trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        Darwin.close(clientDescriptor)
-        if bytesRead <= 0 { return }
-        let receivedData = Data(readBuffer.prefix(bytesRead))
-        guard let receivedString = String(data: receivedData, encoding: .utf8) else { return }
-        let trimmedCommand = receivedString.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedCommand.isEmpty { return }
-        onCommandReceived(trimmedCommand)
+        return payload
     }
 }

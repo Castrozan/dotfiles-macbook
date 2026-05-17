@@ -10,7 +10,7 @@ final class DaemonCompositionRoot {
 
         let composedDependencies = buildAllDependencies()
         composedDependencies.applicationIconProvider.prewarmCacheFromRunningApplications()
-        composedDependencies.commandSocketServer.startAcceptingConnectionsOnBackgroundThread()
+        composedDependencies.commandSocketServer.startReceivingDatagramsOnBackgroundThread()
 
         application.run()
     }
@@ -72,10 +72,9 @@ final class DaemonCompositionRoot {
         )
         let commandSocketServer = CommandSocketServer(
             socketPath: DaemonConfiguration.commandSocketPath,
-            listenBacklog: DaemonConfiguration.socketListenBacklog,
             socketFileMode: DaemonConfiguration.commandSocketFileMode,
-            clientReadBufferSize: DaemonConfiguration.socketReadBufferSize,
-            clientReadTimeoutMicroseconds: DaemonConfiguration.clientReadTimeoutMicroseconds,
+            datagramReadBufferSize: DaemonConfiguration.datagramReadBufferSize,
+            kernelReceiveBufferBytes: DaemonConfiguration.kernelReceiveBufferBytes,
             onCommandReceived: { trimmedCommandString in
                 guard let parsedCommand = SocketCommandParser.parseTrimmedCommand(trimmedCommandString) else {
                     return

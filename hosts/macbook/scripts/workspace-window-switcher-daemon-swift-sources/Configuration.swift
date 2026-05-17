@@ -22,9 +22,8 @@ enum DaemonConfiguration {
     static let cardTitleHeight: CGFloat = 28
 
     static let commitTimeoutSeconds: TimeInterval = 10.0
-    static let socketReadBufferSize = 1024
-    static let socketListenBacklog: Int32 = 32
-    static let clientReadTimeoutMicroseconds: Int32 = 500_000
+    static let datagramReadBufferSize = 4096
+    static let kernelReceiveBufferBytes: Int32 = 1024 * 1024
     static let commandSocketFileMode: mode_t = 0o666
     static let aerospaceIpcTimeoutSeconds: Int = 2
 }

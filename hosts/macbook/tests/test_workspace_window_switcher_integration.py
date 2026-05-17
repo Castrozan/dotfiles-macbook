@@ -65,19 +65,12 @@ def move_mouse_by_offset(delta_x, delta_y):
 
 
 def send_command_to_daemon(command):
-    for attempt in range(SOCKET_CONNECT_RETRY_ATTEMPTS):
-        try:
-            client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            client_socket.settimeout(2)
-            client_socket.connect(SOCKET_PATH)
-            client_socket.sendall(command.encode())
-            client_socket.close()
-            return
-        except ConnectionRefusedError:
-            if attempt < SOCKET_CONNECT_RETRY_ATTEMPTS - 1:
-                time.sleep(SOCKET_CONNECT_RETRY_DELAY_SECONDS)
-            else:
-                raise
+    client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    client_socket.settimeout(2)
+    try:
+        client_socket.sendto(command.encode(), SOCKET_PATH)
+    finally:
+        client_socket.close()
 
 
 def is_switcher_active():

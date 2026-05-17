@@ -140,7 +140,7 @@ in
     ];
   }
   {
-    description = "Cmd+Tab/Cmd+Shift+Tab workspace window switcher via daemon";
+    description = "Cmd+Tab/Cmd+Shift+Tab workspace window switcher via daemon (send_user_command, no fork+exec)";
     manipulators = [
       {
         type = "basic";
@@ -153,7 +153,10 @@ in
         };
         to = [
           {
-            shell_command = "${userBinPath}/workspace-switcher-send prev";
+            send_user_command = {
+              endpoint = "/tmp/workspace-switcher.sock";
+              payload = "prev";
+            };
           }
         ];
       }
@@ -165,14 +168,17 @@ in
         };
         to = [
           {
-            shell_command = "${userBinPath}/workspace-switcher-send next";
+            send_user_command = {
+              endpoint = "/tmp/workspace-switcher.sock";
+              payload = "next";
+            };
           }
         ];
       }
     ];
   }
   {
-    description = "Cmd release commits workspace window switcher";
+    description = "Cmd release commits workspace window switcher (daemon no-ops if inactive)";
     manipulators =
       map
         (commandKey: {
@@ -181,7 +187,10 @@ in
           to = [ { key_code = commandKey; } ];
           to_after_key_up = [
             {
-              shell_command = "[ -f /tmp/workspace-switcher.active ] && ${userBinPath}/workspace-switcher-send commit";
+              send_user_command = {
+                endpoint = "/tmp/workspace-switcher.sock";
+                payload = "commit";
+              };
             }
           ];
         })

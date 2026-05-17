@@ -74,7 +74,6 @@ final class WindowSwitcherStateMachine: SocketCommandHandling {
     }
 
     func handleCancelCommand() {
-        if !isActivationActive { return }
         commitTimeoutScheduler.cancelCommitTimeout()
         deactivate()
     }
@@ -90,7 +89,7 @@ final class WindowSwitcherStateMachine: SocketCommandHandling {
         isFetchingWindows = true
         commitRequestedBeforeFetchCompleted = false
         accumulatedPendingDirectionChanges = initialDirection
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
             self?.fetchWindowsFromProviderOnBackgroundThread()
         }
     }
