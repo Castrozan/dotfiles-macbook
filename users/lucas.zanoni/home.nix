@@ -6,6 +6,7 @@
     ./home/git.nix
     ./home/ssh.nix
     ./home/session-vars.nix
+    ./home/claude-discord-silver.nix
 
     ../../home/core.nix
 
