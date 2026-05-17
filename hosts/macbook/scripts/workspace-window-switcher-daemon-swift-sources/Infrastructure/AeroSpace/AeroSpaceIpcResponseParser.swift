@@ -1,6 +1,6 @@
 import Foundation
 
-struct AeroSpaceIpcResponse {
+struct AeroSpaceIpcResponse: Equatable {
     let exitCode: Int
     let stdoutContent: String
 }

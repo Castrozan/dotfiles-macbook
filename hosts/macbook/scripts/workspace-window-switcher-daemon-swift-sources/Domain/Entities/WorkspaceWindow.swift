@@ -1,6 +1,6 @@
 import Foundation
 
-struct WorkspaceWindow {
+struct WorkspaceWindow: Equatable {
     let identifier: Int
     let applicationName: String
     let title: String

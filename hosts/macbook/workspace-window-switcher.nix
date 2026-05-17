@@ -14,7 +14,7 @@ in
     swiftSourceFiles=()
     while IFS= read -r -d "" swiftSourceFile; do
       swiftSourceFiles+=("$swiftSourceFile")
-    done < <(/usr/bin/find "${swiftDaemonSourcesDirectory}" -name '*.swift' -print0)
+    done < <(/usr/bin/find "${swiftDaemonSourcesDirectory}" -name '*.swift' -not -path '*/tests/*' -print0)
     /usr/bin/swiftc -O -o "${swiftDaemonBinaryPath}" "''${swiftSourceFiles[@]}"
     chmod 0755 "${swiftDaemonBinaryPath}"
     workspaceWindowSwitcherUserId=$(/usr/bin/id -u ${username})

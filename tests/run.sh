@@ -60,6 +60,7 @@ _run_quick_tier() {
 	_run_skill_frontmatter_validation
 	_run_quick_bats_tests
 	_run_quick_pytest_tests
+	_run_swift_logic_tests
 }
 
 _run_nix_tier() {
@@ -95,6 +96,30 @@ _run_quick_pytest_tests() {
 
 	echo "--- Python Tests (quick) ---"
 	pytest $testFiles -x -q
+	echo ""
+}
+
+_run_swift_logic_tests() {
+	local swiftSourcesDir="$REPO_DIR/hosts/macbook/scripts/workspace-window-switcher-daemon-swift-sources"
+
+	if [[ ! -d "$swiftSourcesDir" ]]; then
+		return 0
+	fi
+	if ! command -v /usr/bin/swiftc &>/dev/null; then
+		echo "WARN: /usr/bin/swiftc not available, skipping swift logic tests" >&2
+		return 0
+	fi
+
+	echo "--- Swift Logic Tests (workspace-window-switcher-daemon) ---"
+	local testBinary
+	testBinary="$(mktemp -t wws-tests.XXXXXX)"
+	local swiftSourceFiles=()
+	while IFS= read -r -d '' swiftSourceFile; do
+		swiftSourceFiles+=("$swiftSourceFile")
+	done < <(/usr/bin/find "$swiftSourcesDir" -name "*.swift" -not -name "main.swift" -print0)
+	/usr/bin/swiftc -O -o "$testBinary" "${swiftSourceFiles[@]}"
+	"$testBinary"
+	rm -f "$testBinary"
 	echo ""
 }
 

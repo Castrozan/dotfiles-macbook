@@ -1,6 +1,6 @@
 import Foundation
 
-enum SocketCommand {
+enum SocketCommand: Equatable {
     case next
     case prev
     case commit

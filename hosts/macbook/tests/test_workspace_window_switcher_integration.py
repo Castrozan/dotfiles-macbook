@@ -304,6 +304,256 @@ def test_mouse_movement_performance():
     return True
 
 
+AEROSPACE_SOCKET_GLOB_PATTERN = "/tmp/bobko.aerospace-*.sock"
+FOCUS_EVENT_PROPAGATION_DELAY_SECONDS = 0.25
+AUTO_COMMIT_TIMEOUT_BUFFER_SECONDS = 11.0
+
+
+def find_aerospace_socket_path():
+    import glob
+
+    matching = glob.glob(AEROSPACE_SOCKET_GLOB_PATTERN)
+    return matching[0] if matching else None
+
+
+def send_aerospace_ipc_command(arguments_list):
+    import json
+
+    socket_path = find_aerospace_socket_path()
+    if socket_path is None:
+        return None
+    client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client_socket.settimeout(2)
+    try:
+        client_socket.connect(socket_path)
+        request_payload = json.dumps(
+            {
+                "args": arguments_list,
+                "stdin": "",
+                "windowId": None,
+                "workspace": None,
+            }
+        ).encode()
+        client_socket.sendall(request_payload)
+        client_socket.shutdown(socket.SHUT_WR)
+        response_bytes = b""
+        while True:
+            chunk = client_socket.recv(4096)
+            if not chunk:
+                break
+            response_bytes += chunk
+        client_socket.close()
+        decoder = json.JSONDecoder()
+        response_object, _ = decoder.raw_decode(response_bytes.decode())
+        if response_object.get("exitCode", 1) != 0:
+            return None
+        return response_object.get("stdout", "")
+    except (OSError, ValueError):
+        return None
+
+
+def query_aerospace_focused_window_id():
+    import json
+
+    stdout_text = send_aerospace_ipc_command(["list-windows", "--focused", "--json"])
+    if not stdout_text:
+        return None
+    try:
+        windows = json.loads(stdout_text)
+        return windows[0]["window-id"] if windows else None
+    except (ValueError, IndexError, KeyError):
+        return None
+
+
+def query_aerospace_focused_workspace_window_ids():
+    import json
+
+    stdout_text = send_aerospace_ipc_command(
+        ["list-windows", "--workspace", "focused", "--json"]
+    )
+    if not stdout_text:
+        return []
+    try:
+        return [w["window-id"] for w in json.loads(stdout_text)]
+    except (ValueError, KeyError):
+        return []
+
+
+def focus_window_via_aerospace_and_wait(target_window_id):
+    send_aerospace_ipc_command(["focus", "--window-id", str(target_window_id)])
+    time.sleep(FOCUS_EVENT_PROPAGATION_DELAY_SECONDS)
+
+
+def test_mru_picks_previously_focused_window_on_next_then_commit():
+    print("TEST: cmd+tab from B selects A when A was focused before B")
+
+    workspace_window_ids = query_aerospace_focused_workspace_window_ids()
+    if len(workspace_window_ids) < 2:
+        print("  SKIP: focused workspace needs at least 2 windows")
+        return True
+
+    window_id_a = workspace_window_ids[0]
+    window_id_b = next(
+        (wid for wid in workspace_window_ids if wid != window_id_a), None
+    )
+    if window_id_b is None:
+        print("  SKIP: could not find a second distinct window")
+        return True
+
+    focus_window_via_aerospace_and_wait(window_id_a)
+    focus_window_via_aerospace_and_wait(window_id_b)
+
+    starting_focused_id = query_aerospace_focused_window_id()
+    if starting_focused_id != window_id_b:
+        print(f"  SKIP: could not establish B as focused (got {starting_focused_id})")
+        return True
+
+    send_command_to_daemon("next")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    send_command_to_daemon("commit")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS * 2)
+
+    final_focused_id = query_aerospace_focused_window_id()
+    if final_focused_id == window_id_a:
+        print("  PASS")
+        return True
+    if final_focused_id == window_id_b:
+        print(f"  FAIL: stayed on B ({window_id_b}) — the bug we fixed earlier")
+        return False
+    print(
+        f"  FAIL: focused unexpected window {final_focused_id}, expected A ({window_id_a})"
+    )
+    return False
+
+
+def test_cancel_during_active_clears_flag_without_changing_focus():
+    print("TEST: cancel during active clears flag and preserves focus")
+
+    workspace_window_ids = query_aerospace_focused_workspace_window_ids()
+    if len(workspace_window_ids) < 2:
+        print("  SKIP: focused workspace needs at least 2 windows")
+        return True
+
+    starting_focused_id = query_aerospace_focused_window_id()
+
+    send_command_to_daemon("next")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    if not is_switcher_active():
+        print("  SKIP: switcher did not activate")
+        return True
+
+    send_command_to_daemon("cancel")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+
+    if is_switcher_active():
+        print("  FAIL: active flag still present after cancel")
+        return False
+
+    final_focused_id = query_aerospace_focused_window_id()
+    if final_focused_id != starting_focused_id:
+        print(
+            f"  FAIL: focus changed after cancel: {starting_focused_id} -> {final_focused_id}"
+        )
+        return False
+
+    print("  PASS")
+    return True
+
+
+def test_reactivation_after_commit_starts_fresh_cycle():
+    print("TEST: next+commit then next reactivates with fresh state")
+
+    workspace_window_ids = query_aerospace_focused_workspace_window_ids()
+    if len(workspace_window_ids) < 2:
+        print("  SKIP: focused workspace needs at least 2 windows")
+        return True
+
+    send_command_to_daemon("next")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    send_command_to_daemon("commit")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+
+    if is_switcher_active():
+        print("  FAIL: flag still present after commit")
+        return False
+
+    send_command_to_daemon("next")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    if not is_switcher_active():
+        print("  FAIL: reactivation did not set flag")
+        return False
+
+    send_command_to_daemon("cancel")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    print("  PASS")
+    return True
+
+
+def test_focus_socket_message_updates_internal_mru():
+    print("TEST: focus:<id> socket messages influence next activation ordering")
+
+    workspace_window_ids = query_aerospace_focused_workspace_window_ids()
+    if len(workspace_window_ids) < 3:
+        print("  SKIP: focused workspace needs at least 3 windows")
+        return True
+
+    starting_focused_id = query_aerospace_focused_window_id()
+    other_window_ids = [
+        wid for wid in workspace_window_ids if wid != starting_focused_id
+    ]
+    if len(other_window_ids) < 2:
+        print("  SKIP: need at least two non-focused windows")
+        return True
+
+    desired_second_choice_window_id = other_window_ids[0]
+    third_candidate_window_id = other_window_ids[1]
+
+    send_command_to_daemon(f"focus:{third_candidate_window_id}")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    send_command_to_daemon(f"focus:{desired_second_choice_window_id}")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+
+    send_command_to_daemon("next")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    send_command_to_daemon("commit")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS * 2)
+
+    final_focused_id = query_aerospace_focused_window_id()
+    if final_focused_id == desired_second_choice_window_id:
+        print("  PASS")
+        return True
+    print(
+        f"  FAIL: expected to land on {desired_second_choice_window_id}, "
+        f"got {final_focused_id}"
+    )
+    return False
+
+
+def test_auto_commit_fires_after_timeout_seconds():
+    print(
+        f"TEST: auto-commit fires after ~{AUTO_COMMIT_TIMEOUT_BUFFER_SECONDS}s of inactivity"
+    )
+
+    workspace_window_ids = query_aerospace_focused_workspace_window_ids()
+    if len(workspace_window_ids) < 2:
+        print("  SKIP: focused workspace needs at least 2 windows")
+        return True
+
+    send_command_to_daemon("next")
+    time.sleep(COMMAND_SETTLE_DELAY_SECONDS)
+    if not is_switcher_active():
+        print("  SKIP: switcher did not activate")
+        return True
+
+    time.sleep(AUTO_COMMIT_TIMEOUT_BUFFER_SECONDS)
+    if is_switcher_active():
+        print("  FAIL: flag still present after auto-commit window")
+        return False
+
+    print("  PASS")
+    return True
+
+
 def main():
     print("=== workspace-window-switcher integration tests ===")
     print()
@@ -319,6 +569,11 @@ def main():
         test_selection_advances_past_index_one_with_mouse_movement,
         test_rapid_next_commands_with_continuous_mouse_movement,
         test_activate_deactivate_cycle_performance,
+        test_mru_picks_previously_focused_window_on_next_then_commit,
+        test_cancel_during_active_clears_flag_without_changing_focus,
+        test_reactivation_after_commit_starts_fresh_cycle,
+        test_focus_socket_message_updates_internal_mru,
+        test_auto_commit_fires_after_timeout_seconds,
     ]
 
     passed_count = 0
