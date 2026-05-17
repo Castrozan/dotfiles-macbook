@@ -1,7 +1,33 @@
 import Darwin
 import Foundation
 
-final class CommandSocketAcceptLoop {
+final class SocketCommandMainThreadDispatcher {
+    private let commandHandler: SocketCommandHandling
+
+    init(commandHandler: SocketCommandHandling) {
+        self.commandHandler = commandHandler
+    }
+
+    func dispatchOnMainThread(_ command: SocketCommand) {
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            strongSelf.executeCommandOnMainThread(command)
+        }
+    }
+
+    private func executeCommandOnMainThread(_ command: SocketCommand) {
+        switch command {
+        case .next: commandHandler.handleNextCommand()
+        case .prev: commandHandler.handlePrevCommand()
+        case .commit: commandHandler.handleCommitCommand()
+        case .cancel: commandHandler.handleCancelCommand()
+        case .recordExternalFocus(let windowIdentifier):
+            commandHandler.recordExternallyFocusedWindow(windowIdentifier)
+        }
+    }
+}
+
+final class CommandSocketServer {
     private let socketPath: String
     private let listenBacklog: Int32
     private let socketFileMode: mode_t
@@ -25,7 +51,13 @@ final class CommandSocketAcceptLoop {
         self.onCommandReceived = onCommandReceived
     }
 
-    func runAcceptLoopUntilTerminated() {
+    func startAcceptingConnectionsOnBackgroundThread() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.runAcceptLoopUntilTerminated()
+        }
+    }
+
+    private func runAcceptLoopUntilTerminated() {
         guard let serverDescriptor = UnixSocketBinder.bindAndListenStreamSocket(
             atPath: socketPath,
             listenBacklog: listenBacklog,

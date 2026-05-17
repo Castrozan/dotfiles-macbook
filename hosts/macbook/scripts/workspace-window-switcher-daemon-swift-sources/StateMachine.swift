@@ -138,6 +138,7 @@ final class WindowSwitcherStateMachine: SocketCommandHandling {
         }
 
         overlayRenderer.showWithWindowsAndSelection(orderedWindows, selectedIndex: selectedWindowIndex)
+        performanceProfiler.markPhase("overlay_visible")
         performanceProfiler.emitActivationReport()
         rescheduleCommitTimeout()
     }

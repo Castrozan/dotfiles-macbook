@@ -1,6 +1,6 @@
 import Foundation
 
-final class ActiveFlagFileWriter: ActivationFlagWriting {
+final class ActivationFlagFileWriter: ActivationFlagWriting {
     private let flagFilePath: String
 
     init(flagFilePath: String) {

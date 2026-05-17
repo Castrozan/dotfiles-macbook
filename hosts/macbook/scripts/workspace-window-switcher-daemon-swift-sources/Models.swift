@@ -12,3 +12,11 @@ struct WorkspaceWindow: Equatable {
         return WorkspaceWindow(identifier: identifier, applicationName: applicationName, title: title)
     }
 }
+
+enum SocketCommand: Equatable {
+    case next
+    case prev
+    case commit
+    case cancel
+    case recordExternalFocus(windowIdentifier: Int)
+}

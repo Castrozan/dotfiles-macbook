@@ -3,7 +3,7 @@ import Foundation
 
 final class DaemonCompositionRoot {
     func bootstrapAndRun() {
-        DaemonStartupSequence.removeStaleActivationFlagFile(atPath: DaemonConfiguration.activationFlagFilePath)
+        try? FileManager.default.removeItem(atPath: DaemonConfiguration.activationFlagFilePath)
 
         let application = NSApplication.shared
         application.setActivationPolicy(.accessory)
@@ -23,23 +23,12 @@ final class DaemonCompositionRoot {
         )
         let aerospaceWindowProvider = AeroSpaceWindowProvider(ipcClient: aerospaceIpcClient)
 
-        let applicationIconCache = ApplicationIconCache()
-        let applicationIconProvider = ApplicationIconProvider(iconCache: applicationIconCache)
-
-        let activationPhaseTimestampStore = ActivationPhaseTimestampStore()
-        let performanceLogFileAppender = PerformanceLogFileAppender(
+        let applicationIconProvider = ApplicationIconProvider()
+        let activationPerformanceProfiler = ActivationPerformanceProfiler(
             logFilePath: DaemonConfiguration.performanceLogFilePath
         )
-        let activationPerformanceProfiler = ActivationPerformanceProfiler(
-            timestampStore: activationPhaseTimestampStore,
-            logFileAppender: performanceLogFileAppender
-        )
-        let overlayLifecycleObserver = PerformanceProfilingOverlayLifecycleAdapter(
-            performanceProfiler: activationPerformanceProfiler
-        )
-
         let mostRecentlyUsedWindowTracker = MostRecentlyUsedWindowTracker()
-        let activationFlagFileWriter = ActiveFlagFileWriter(
+        let activationFlagFileWriter = ActivationFlagFileWriter(
             flagFilePath: DaemonConfiguration.activationFlagFilePath
         )
         let commitTimeoutTimerScheduler = CommitTimeoutTimerScheduler()
@@ -56,13 +45,10 @@ final class DaemonCompositionRoot {
             cardTitleBottomOffset: DaemonConfiguration.cardTitleBottomOffset,
             cardTitleHeight: DaemonConfiguration.cardTitleHeight
         )
-        let cardSelectionStyler = CardSelectionStyler(
-            titleFontSize: DaemonConfiguration.titleFontSize
-        )
+        let cardSelectionStyler = CardSelectionStyler(titleFontSize: DaemonConfiguration.titleFontSize)
         let switcherOverlayPanel = SwitcherOverlayPanel(
             cardViewFactory: windowCardViewFactory,
             selectionStyler: cardSelectionStyler,
-            overlayLifecycleObserver: overlayLifecycleObserver,
             cardWidth: DaemonConfiguration.cardWidth,
             cardHeight: DaemonConfiguration.cardHeight,
             cardSpacing: DaemonConfiguration.cardSpacing,
@@ -84,7 +70,7 @@ final class DaemonCompositionRoot {
         let socketCommandMainThreadDispatcher = SocketCommandMainThreadDispatcher(
             commandHandler: windowSwitcherStateMachine
         )
-        let commandSocketAcceptLoop = CommandSocketAcceptLoop(
+        let commandSocketServer = CommandSocketServer(
             socketPath: DaemonConfiguration.commandSocketPath,
             listenBacklog: DaemonConfiguration.socketListenBacklog,
             socketFileMode: DaemonConfiguration.commandSocketFileMode,
@@ -97,7 +83,6 @@ final class DaemonCompositionRoot {
                 socketCommandMainThreadDispatcher.dispatchOnMainThread(parsedCommand)
             }
         )
-        let commandSocketServer = CommandSocketServer(acceptLoop: commandSocketAcceptLoop)
 
         return ComposedDaemonDependencies(
             applicationIconProvider: applicationIconProvider,
