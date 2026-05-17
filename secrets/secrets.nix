@@ -13,4 +13,6 @@ in
   "credentials/gitlab-com-token.age".publicKeys = all_keys;
   "credentials/jira-api-token.age".publicKeys = all_keys;
   "infrastructure/ssh-hosts.age".publicKeys = all_keys;
+
+  "bot-tokens/discord-bot-token-silver.age".publicKeys = all_keys;
 }

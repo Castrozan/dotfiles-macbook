@@ -19,6 +19,7 @@ let
     "credentials/obsidian-headless-auth-token"
     "credentials/obsidian-headless-sync-config"
     "infrastructure/ssh-hosts"
+    "bot-tokens/discord-bot-token-silver"
   ];
 
   secretsAsEnvironmentVariables = {
