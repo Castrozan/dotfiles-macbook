@@ -69,6 +69,20 @@ let
 in
 [
   {
+    description = "F19 fires canary witness file so health-monitor daemon can verify rules are firing end-to-end";
+    manipulators = [
+      {
+        type = "basic";
+        from.key_code = "f19";
+        to = [
+          {
+            shell_command = "/usr/bin/touch /tmp/karabiner-canary-firing-witness";
+          }
+        ];
+      }
+    ];
+  }
+  {
     description = "Cmd+D to Show Desktop (Fn+F11)";
     manipulators = [
       {
