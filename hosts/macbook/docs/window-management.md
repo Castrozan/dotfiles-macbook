@@ -16,18 +16,35 @@ Karabiner-Elements 15.x is installed via the homebrew cask `karabiner-elements` 
 - `karabiner_console_user_server` (per-user launchd agent `org.pqrs.service.agent.karabiner_console_user_server`) loads `~/.config/karabiner/karabiner.json` and pushes rules to the core service.
 - `Karabiner-VirtualHIDDevice-Daemon` plus the DriverKit system extension `org.pqrs.Karabiner-DriverKit-VirtualHIDDevice` provide the virtual keyboard and mouse used to post the remapped events back into the system.
 
-Config flow: `home/modules/desktop/karabiner-rules.nix` produces the JSON, `home/modules/desktop/karabiner.nix` writes it to `~/.config/karabiner/karabiner.json` on every home-manager activation and kicks `karabiner_console_user_server` so the change loads immediately.
+All karabiner-related modules and scripts live under `home/modules/desktop/karabiner/`:
+
+```
+home/modules/desktop/karabiner/
+├── default.nix                              # imports every sub-module below
+├── rules/default.nix                        # rule list (pure function imported with { username })
+├── config-deployment/
+│   ├── copy-rules-json-to-user-config-directory.nix
+│   └── kick-console-user-server-every-rebuild.nix
+├── restart-on-wake/
+│   ├── launchd-agent.nix                    # home-manager launchd.agents.karabiner-restart-on-wake
+│   └── scripts/karabiner-restart-on-wake-daemon
+└── orphan-launchd-cleanup/
+    ├── home-manager-activation.nix
+    └── scripts/remove-orphan-nix-darwin-karabiner-launchd-entries
+```
+
+Config flow: `rules/default.nix` returns the rule list, `config-deployment/copy-rules-json-to-user-config-directory.nix` serializes it to `~/.config/karabiner/karabiner.json` (only when content differs, preserving inode), and `config-deployment/kick-console-user-server-every-rebuild.nix` runs `launchctl kickstart -k karabiner_console_user_server` so the new config loads immediately.
 
 ### Karabiner restart-on-wake daemon
 
-`hosts/macbook/karabiner-restart-on-wake.nix` runs a Python user agent (`hosts/macbook/scripts/karabiner-restart-on-wake-daemon`) that calls `launchctl kickstart -k karabiner_console_user_server`:
+`restart-on-wake/launchd-agent.nix` declares a home-manager LaunchAgent labelled `com.dotfiles.karabiner-restart-on-wake` that runs the Python daemon in `restart-on-wake/scripts/karabiner-restart-on-wake-daemon`. The daemon calls `launchctl kickstart -k karabiner_console_user_server`:
 
 - on `NSWorkspaceDidWakeNotification`, because Karabiner can lose grab state across sleep/wake;
 - every 900 seconds, because the user server can silently degrade (process alive, devices grabbed, shell_command rules stop firing). The periodic kick bounds the recovery window.
 
 ### Orphan launchd cleanup
 
-`hosts/macbook/karabiner-orphan-launchd-cleanup.nix` runs `scripts/remove-orphan-nix-darwin-karabiner-launchd-entries` on every system activation. It removes plists left behind by an earlier `services.karabiner-elements.enable = true` (no longer in the repo). The orphans pointed to garbage-collected nix store paths and failed on every boot with exit 126. The cleanup is idempotent and safe on a fresh machine that never had the nix-darwin module.
+`orphan-launchd-cleanup/home-manager-activation.nix` runs `scripts/remove-orphan-nix-darwin-karabiner-launchd-entries` on every home-manager activation. It removes plists left behind by an earlier `services.karabiner-elements.enable = true` (no longer in the repo): two LaunchDaemons under `/Library/LaunchDaemons/org.nixos.*karabiner*.plist`, one LaunchAgent under `~/Library/LaunchAgents/`, and `/Applications/.Nix-Karabiner/`. The orphans pointed to garbage-collected nix store paths and failed on every boot with exit 126. The script gates sudo behind presence checks, so a fresh machine without any orphans incurs zero privileged calls.
 
 ### Keybinding chain
 

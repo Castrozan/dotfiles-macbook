@@ -31,7 +31,7 @@
     ../../home/modules/desktop/workspace-navigator.nix
     ../../home/modules/desktop/workspace-switcher-client.nix
     ../../home/modules/desktop/fonts.nix
-    ../../home/modules/desktop/karabiner.nix
+    ../../home/modules/desktop/karabiner
     ../../home/modules/desktop/keyboard-layout
     ../../home/modules/desktop/maccy.nix
     ../../home/modules/desktop/spaceman.nix

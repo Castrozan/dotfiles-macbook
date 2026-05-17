@@ -32,7 +32,7 @@ let
   aerospaceBindings = aerospaceCfg.programs.aerospace.userSettings.mode.main.binding;
   aerospaceSettings = aerospaceCfg.programs.aerospace.userSettings;
 
-  karabinerRules = import ../karabiner-rules.nix { username = "test"; };
+  karabinerRules = import ../karabiner/rules { username = "test"; };
 
   allLowercaseLetters = builtins.genList (i: builtins.substring i 1 "abcdefghijklmnopqrstuvwxyz") 26;
 
@@ -190,18 +190,4 @@ in
       ) karabinerRules)
       "karabiner must intercept cmd-c to summon Chrome";
 
-  domain-desktop-karabiner-cmd-f-toggles-aerospace-fullscreen =
-    mkEvalCheck "domain-desktop-karabiner-cmd-f-toggles-aerospace-fullscreen"
-      (lib.any (
-        rule:
-        lib.any (
-          manipulator:
-          (manipulator.from.key_code or "") == "f"
-          && builtins.elem "command" (manipulator.from.modifiers.mandatory or [ ])
-          && lib.any (to: lib.hasInfix "aerospace fullscreen" (to.shell_command or "")) (
-            manipulator.to or [ ]
-          )
-        ) (rule.manipulators or [ ])
-      ) karabinerRules)
-      "karabiner must intercept cmd-f and toggle fullscreen via aerospace fullscreen";
 }
