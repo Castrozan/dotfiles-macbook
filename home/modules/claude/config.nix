@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 let
   hooksConfig = import ./hook-config.nix;
   pluginsConfig = import ./plugins.nix { inherit pkgs; };
@@ -27,11 +27,6 @@ let
     includeGitInstructions = false;
     showTurnDuration = true;
     teammateMode = "tmux";
-    env = {
-      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-      CLAUDE_ENABLE_STREAM_WATCHDOG = "1";
-      PATH = "/run/current-system/sw/bin:/etc/profiles/per-user/${config.home.username}/bin:/nix/var/nix/profiles/default/bin:/usr/bin:/bin";
-    };
     permissions = {
       defaultMode = "bypassPermissions";
       allow = [ "*" ];
@@ -83,18 +78,6 @@ in
       ".claude/keybindings.json".text = builtins.toJSON claudeKeybindings;
       ".dotfiles/CLAUDE.md".text = claudeDotfilesRules;
       ".claude/CLAUDE.md".text = claudeGlobalRules;
-    };
-
-    sessionVariables = {
-      CLAUDE_CODE_SHELL = "${pkgs.bash}/bin/bash";
-      CLAUDE_BASH_NO_LOGIN = "1";
-      BASH_DEFAULT_TIMEOUT_MS = "120000";
-      BASH_MAX_TIMEOUT_MS = "600000";
-      CLAUDE_DANGEROUSLY_DISABLE_SANDBOX = "true";
-      CLAUDE_SKIP_PERMISSIONS = "true";
-      BASH_ENV = "$HOME/.dotfiles/home/modules/terminal/shell/aliases.sh";
-      CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "80";
-      CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "true";
     };
 
     activation.seedClaudeSettingsAsMutableFile = {

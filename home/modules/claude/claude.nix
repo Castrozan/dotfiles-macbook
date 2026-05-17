@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
   fetchPrebuiltBinary = import ../../../lib/fetch-prebuilt-binary.nix { inherit pkgs; };
 
@@ -27,9 +27,15 @@ let
     binaryName = "claude";
   };
 
+  claudeEnvironmentVariables = import ./claude-environment-variables.nix { inherit pkgs; };
+
+  exportLinesForClaudeEnvironment = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (name: value: ''export ${name}="${value}"'') claudeEnvironmentVariables
+  );
+
   claude-code = pkgs.writeShellScriptBin "claude" ''
-    export NPM_CONFIG_PREFIX="/nonexistent"
-    export DISABLE_AUTOUPDATER=1
+    ${exportLinesForClaudeEnvironment}
+    rm -rf "$HOME/.local/share/claude/versions"
     exec ${claude-code-unwrapped}/bin/claude "$@"
   '';
 in
