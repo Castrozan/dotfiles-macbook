@@ -954,6 +954,58 @@ class TestAutoCommitTimeoutValue:
         assert timeout_value == 10.0
 
 
+class TestOverlayPanelLifecycle:
+    @pytest.fixture
+    def overlay_with_mocked_panel_class(self):
+        overlay = daemon.SwitcherOverlayPanel(MagicMock())
+        with patch.object(daemon, "NonActivatingPanel") as mock_panel_class:
+            yield overlay, mock_panel_class
+
+    def test_overlay_does_not_create_panel_until_first_show(self):
+        overlay = daemon.SwitcherOverlayPanel(MagicMock())
+        assert overlay._panel is None
+
+    def test_show_allocates_a_fresh_panel_via_non_activating_panel(
+        self, overlay_with_mocked_panel_class, sample_workspace_windows
+    ):
+        overlay, mock_panel_class = overlay_with_mocked_panel_class
+        overlay.show_with_windows_and_selection(sample_workspace_windows, 0)
+        assert overlay._panel is not None
+        mock_panel_class.alloc.assert_called_once()
+
+    def test_hide_closes_and_releases_the_panel_reference(
+        self, overlay_with_mocked_panel_class, sample_workspace_windows
+    ):
+        overlay, _ = overlay_with_mocked_panel_class
+        overlay.show_with_windows_and_selection(sample_workspace_windows, 0)
+        previous_panel = overlay._panel
+        overlay.hide()
+        assert overlay._panel is None
+        previous_panel.orderOut_.assert_called_once_with(None)
+        previous_panel.close.assert_called_once()
+
+    def test_consecutive_show_hide_cycles_allocate_distinct_panels(
+        self, overlay_with_mocked_panel_class, sample_workspace_windows
+    ):
+        overlay, mock_panel_class = overlay_with_mocked_panel_class
+        overlay.show_with_windows_and_selection(sample_workspace_windows, 0)
+        overlay.hide()
+        overlay.show_with_windows_and_selection(sample_workspace_windows, 0)
+        assert mock_panel_class.alloc.call_count == 2
+
+    def test_hide_is_safe_when_panel_was_never_created(self):
+        overlay = daemon.SwitcherOverlayPanel(MagicMock())
+        overlay.hide()
+        assert overlay._panel is None
+
+    def test_panel_has_released_when_closed_disabled_so_python_owns_lifetime(
+        self, overlay_with_mocked_panel_class, sample_workspace_windows
+    ):
+        overlay, _ = overlay_with_mocked_panel_class
+        overlay.show_with_windows_and_selection(sample_workspace_windows, 0)
+        overlay._panel.setReleasedWhenClosed_.assert_called_with(False)
+
+
 @pytest.mark.real_threads
 class TestCommandSocketServerRecvTimeout:
     def test_slow_client_does_not_block_subsequent_commands(self):
