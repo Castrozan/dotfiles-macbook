@@ -3,6 +3,7 @@
   imports = [
     ./claude.nix
     ./config.nix
+    ./discord-channel
     ./external-skill-sets.nix
     ./hooks.nix
     ./mcps
